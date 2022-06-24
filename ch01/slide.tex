@@ -1,0 +1,194 @@
+\documentclass{beamer}
+
+\usepackage{fontspec,xunicode,xltxtra}
+
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt
+
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+\newfontfamily\hei{WenQuanYi Micro Hei}
+\newfontfamily\whei{WenQuanYi Zen Hei}
+\newfontfamily\kai{AR PL UKai CN}
+\newfontfamily\song{AR PL UMing CN}
+\newfontfamily\bhei{cwTeXHeiBold}
+%\newfontfamily\lishu{SIMLI}
+\setmainfont[Mapping=tex-text]{WenQuanYi Micro Hei}
+\setsansfont[Mapping=tex-text]{AR PL UKai CN}
+\setmonofont[Mapping=tex-text]{WenQuanYi Zen Hei Mono}
+
+\renewcommand{\baselinestretch}{1.25}
+
+
+\mode<presentation>
+{
+  \usetheme{Darmstadt}
+
+ % \usetheme{Warsaw}
+  % or ...
+%  \usetheme{default}
+
+  \setbeamercovered{transparent}
+  % or whatever (possibly just delete it)
+}
+
+
+\usepackage[english]{babel}
+% or whatever
+
+%\usepackage[latin1]{inputenc}
+% or whatever
+
+\title[Beamer + xelatex] % (optional, use only with long paper titles)
+{\Huge 数学软件}
+
+\subtitle
+{第一讲: 数学家应该如何使用计算机} % (optional)
+
+\author[Wang HY] % (optional, use only with lots of authors)
+{王何宇}
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[ZJU] % (optional, but mostly needed)
+{
+  浙江大学数学科学学院\\
+  信息与计算科学系
+}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date[] % (optional)
+{2022年6月}
+
+
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+\pgfdeclareimage[height=1cm]{university-logo}{images/zju.jpg}
+\logo{\pgfuseimage{university-logo}}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+%\AtBeginSubsection[]
+%{
+%  \begin{frame}<beamer>{Outline}
+%    \tableofcontents[currentsection,currentsubsection]
+%  \end{frame}
+%}
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+
+\begin{document}
+
+\begin{frame}
+ \titlepage
+\end{frame}
+\begin{frame}{Outline}
+  \tableofcontents
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+\section{引言}
+
+\begin{frame}{本课主要内容}
+  \begin{itemize}
+  \item<1-> 著名的数学软件如 Matlab, Mathematica, R ...
+  \item<2-> 这些我们不学!
+  \item<3-> 如何优雅地用计算机做数学研究和相关的事情.
+  \item<4-> 编写数学软件所需要的基础知识和技能.
+  \item<5-> 编程除外...
+  \item<6-> 当然, 数学也除外...
+  \item<7-> 这是一门给数学人准备的非数学课.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{为什么是 Linux?}
+  \begin{itemize}
+  \item<1-> Linux 是给正经人用的, 数学人都是正经人, 至少在做数学的时候... 
+  \item<2-> 人不要去做机器该做的事, 更加不能做迁就机器的事.
+  \item<3-> 除非能提高工作或思考的效率, 否则拒绝任何不必要的界面和约束. 
+  \item<4-> 公开, 共享和同行评议是科学社区的基础, 也是开源社区的基础.
+  \item<5-> 作为一个靠谱的数学院, Linux 将是除纯粹数学方向以外同学在未来专业课程中的生存技能.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{学习本课的基本条件}
+  \begin{itemize}
+  \item<1-> 一个可以正常运行的 Linux 系统, 可以是独立系统, 双系统, 云主机, 或虚拟机.
+  \item<2-> 能正确使用键盘, 打字速度不宜太低.
+  \item<3-> 心理上能接受学习 Linux 的必要性. 
+  \item<4-> 准备通过大量的练习来磨练你的基本技能.  
+  \item<5-> 未来计划走应用数学的发展方向.
+  \item<6-> 如果以上条件不能满足, 也不准备克服, 建议立刻退课或换课, 以免浪费时间.
+  \end{itemize}
+\end{frame}
+
+\section{正确使用你的计算机}
+
+\begin{frame}{计算机往事}
+  \begin{itemize}
+  \item<1-> 使用二进制的计算机和十进制都不太好的人类是如何共存的? 
+  \item<2-> 人类如何控制计算机(确信?).
+  \item<3-> 终端下的 shell 是正常人类可以切入的最佳位置.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{文本编辑器}
+  \begin{itemize}
+  \item<1-> 产生正确的编码.
+  \item<2-> 使你的工作效率提升.
+  \item<3-> 编辑器本身不应该占用太多资源.
+  \item<4-> 推荐: emacs, vim, vscode.
+  \end{itemize}
+\end{frame}
+
+\section{数学写作}
+\begin{frame}{如何产生漂亮的数学文章}
+  \begin{itemize}
+  \item<1-> 文字和公式都必须优雅, 美观.
+  \item<2-> 像数学公式和定理那样确定和稳定.
+  \item<3-> 能用键盘文本输入, 且公式输入时不打断数学的思考, 就像写黑板.
+  \item<4-> 只有满足上述条件, 才会被大部分数学人接受.
+  \item<5-> 除了论文, 也能够产生各种文档, 比如报告.
+  \item<6-> 有且仅有一解: Latex.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Latex学习路径}
+  \begin{itemize}
+  \item<1-> 参考资料: lshort, manual, ...
+  \item<2-> 代数般优雅的语法.
+  \item<3-> 最好的学习方式是动手. 
+  \item<4-> 90 \% 的麻烦来自中文化.
+  \item<5-> Latex 已经成为在多个平台和工具中书写数学公式的实际标准: Markdown, github, ...
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Latex进阶}
+  \begin{itemize}
+  \item<1-> 交叉引用和计数器.
+  \item<2-> 图, 表和正文混排.
+  \item<3-> 报告的制作.
+  \item<4-> 手工绘图.
+  \end{itemize}
+\end{frame}
+
+\section{今日份作业}
+
+
+\end{document}
+
+
