@@ -2,6 +2,8 @@
 
 \usepackage{fontspec,xunicode,xltxtra}
 
+\usepackage{tikz}
+
 \XeTeXlinebreaklocale "zh"
 \XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt
 
@@ -139,12 +141,30 @@
 \section{计算机往事}
 
 \begin{frame}{和计算机交流}
-  \begin{itemize}
-  \item<1-> 繁华下的真像: 二进制流. 
-  \item<2-> 控制计算机, 而不是被控制.
-  \item<3-> core 归计算机, shell 归愚蠢的人类.
-  \item<4-> 掌握了 Terminal/shell, 才能真正掌握计算机(才怪).
-  \end{itemize}
+  \begin{columns}[c]
+% create the column with the first image, that occupies
+% half of the slide
+    \begin{column}{.5\textwidth}
+      \begin{itemize}
+      \item<1-> 繁华下的真像: 二进制流. 
+      \item<2-> 控制计算机, 而不是被控制.
+      \item<3-> core 归计算机, shell 归愚蠢的人类.
+      \item<4-> 掌握了 Terminal/shell, 才能真正掌握计算机(才怪).
+      \end{itemize}
+    \end{column}
+% create the column with the second image, that also
+% occupies half of the slide
+    \begin{column}{.5\textwidth}
+    \begin{figure}
+        \centering
+        \includegraphics<1->[width=0.75\textwidth]{res/matrix.bmp}
+        \includegraphics<2->[width=0.75\textwidth]{res/matrixbin.png}
+    \end{figure}
+    \end{column}
+\end{columns}
+  %% \begin{tikzpicture}
+  %%   \node (img1) {\includegraphics[height=3cm]{res/matrix.bmp}};
+  %% \end{tikzpicture}
 \end{frame}
 
 \begin{frame}{文本编辑器}
