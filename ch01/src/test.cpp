@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
 	std::ifstream bmpFile;
 	std::ofstream outTest;
-	bmpFile.open("../res/matrix.bmp", std::ios::binary);
+	bmpFile.open("../images/matrix.bmp", std::ios::binary);
 	outTest.open("test.bmp", std::ios::binary);
 	if (!bmpFile.is_open())
 	{
