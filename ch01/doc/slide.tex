@@ -48,10 +48,10 @@
 % or whatever
 
 \title[Beamer + xelatex] % (optional, use only with long paper titles)
-{\Huge 数学软件}
+{\Huge 数学软件: 应用数学家应该如何使用计算机}
 
 \subtitle
-{第一讲: 应用数学家应该如何使用计算机} % (optional)
+{第一讲: 进入真正的计算机世界} % (optional)
 
 \author[Wang HY] % (optional, use only with lots of authors)
 {王何宇}
@@ -104,6 +104,15 @@
 \end{frame}
 
 \section{引言}
+
+\begin{frame}{自我介绍}
+  \begin{itemize}
+  \item 王何宇, 浙江大学数学科学学院, 信息与计算科学系.
+  \item email: wangheyu@zju.edu.cn
+  \item 手机: 13456940632
+  \item 我承担很多信息与计算方向的专业课程, 所以大概率会和大家共事 3 年甚至更多.
+  \end{itemize}
+\end{frame}
 
 \begin{frame}{本课主要内容}
   \begin{itemize}
@@ -169,32 +178,32 @@
 
 \begin{frame}{文本编辑器}
   \begin{itemize}
-  \item<1-> 产生正确的编码.
-  \item<2-> 使你的工作效率提升.
-  \item<3-> 编辑器本身不应该占用太多资源.
+  \item<1-> 能基本上完全用键盘控制.
+  \item<2-> 适合终端和 shell 的模式, 不占用太多的软硬件和通讯资源.
+  \item<3-> 能快速高效地发送和接受指令, 完成编码.
   \item<4-> 推荐: emacs, vim, vscode.
+  \item<5-> 选择一款最适合你自己, 能把你的工作效率提到最高的编辑器.
+  \item<6-> 如果你还是新手, 请盲从大佬.
+  \item<7-> 切记一切以效率为中心, 不要对编辑器提太多不切实际的要求.
+  \item<8-> 如果你不知道怎么配置你的编辑器, 用缺省配置, 或者像同行要一个配置文件. 
   \end{itemize}
 \end{frame}
 
 \section{数学写作}
 \begin{frame}{如何产生漂亮的数学文章}
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[left = 2cm, above = -0.1cm] at (current page.east) 
+         {
+           \includegraphics[width=0.25\textwidth]{../images/knuth.png}
+         };
+\end{tikzpicture}  
   \begin{itemize}
-  \item<1-> 文字和公式都必须优雅, 美观.
-  \item<2-> 像数学公式和定理那样确定和稳定.
-  \item<3-> 能用键盘文本输入, 且公式输入时不打断数学的思考, 就像写黑板.
-  \item<4-> 只有满足上述条件, 才会被大部分数学人接受.
-  \item<5-> 除了论文, 也能够产生各种文档, 比如报告.
-  \item<6-> 有且仅有一解: Latex.
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{Latex学习路径}
-  \begin{itemize}
-  \item<1-> 参考资料: lshort, manual, ...
-  \item<2-> 代数般优雅的语法.
-  \item<3-> 最好的学习方式是动手. 
-  \item<4-> 90 \% 的麻烦来自中文化.
-  \item<5-> Latex 已经成为在多个平台和工具中书写数学公式的实际标准: Markdown, github, ...
+  \item<1-> 数学家对写作有特殊的要求.
+  \item<2-> 同样必须满足键盘, 终端和高效的原则.
+  \item<3-> 唯一解也是事实上的标准: \LaTeX.
+  \item<4-> 参考资料: lshort, manual, ...
+  \item<5-> 去找一个例子.
+  \item<6-> 必须亲自动手写点什么. 
   \end{itemize}
 \end{frame}
 
