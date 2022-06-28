@@ -1,0 +1,225 @@
+%!Tex Program = xelatex
+%\documentclass[a4paper]{article}
+\documentclass[a4paper]{ctexart}
+\usepackage{xltxtra}
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+
+\title{第二讲: 进一步深入 Linux 社区}
+\author{王何宇}
+\date{}
+\begin{document}
+\maketitle
+\pagestyle{empty}
+
+\section{Linux 环境}
+
+Linux 环境与其说是一些软件的使用, 更重要的是一些工作的原则和习惯. 这才是我们真正需要掌握的.
+上一讲中, 我们已经体验了:
+
+\begin{itemize}
+\item 尽量使用键盘, 充分利用快捷键, 在字符界面下高效率地完成工作；
+\item 用 \LaTeX 来组织你的科技文献, 使它看上去更加专业.  
+\end{itemize}
+
+不少同学因为初次接触, 因此会遇到很多实际的困难, 并且耗费了相当大的精力和时间.
+但如果你要达到至少我这样一位老人家的工作效率, 这些付出是值得的. 但是千万不要忘记我们的原则:
+
+\begin{itemize}
+\item 一切都是经验和规范, 无关你的天赋和智商, 要多看文档, 多问, 善用搜索引擎；
+\item 人不要去做机器该做的事情, 不要太勤劳.
+\end{itemize}
+
+今天, 我们进一步深入这个过程. 我们先来阅读一本靠谱的书籍的部分章节:
+
+N. Matthew and R. Stones, Beginning Linux Programming,
+4th Edition, Wiley Publishing, Inc.,
+Indianapolis, 2008.
+
+\subsection{Linux 的基本结构}
+
+Linux 同样具有一个文件树系统, 也就是它的文件也全部在 \verb|/| 下展开. 我们可以用 \verb|cd| 命令进入这个目录,
+\begin{verbatim}
+cd /
+ls
+\end{verbatim}
+
+这里 \verb|ls| 是列出当前目录下全部文件的意思. 可以看到, 基本上有这样一些目录:
+
+\begin{itemize}
+\item \verb|bin|, 系统级可执行文件, 比如 \verb|ls| 这个命令就在这里；
+\item \verb|usr|, 用户级系统文件, 比如用户软件. 该目录下有二级目录, 比如 \verb|/usr/bin|,
+  很多应用软件的启动程序就放在这里.
+\item \verb|etc|, 系统的软硬件配置文件很多都在这里.
+\item \verb|home|, 用户目录, 每一个二级目录都是一个用户的全部数据. 
+\item ...
+\end{itemize}
+
+理论上说, 一个用户应该只修改和维护他个人目录中的文件, {\bf 除非知道你正在干什么,
+  否则不要去修改除用户目录之外的任何文件!} 即便你知道你在干什么, 切记做好适当的备份或回滚策略.
+此外, 这些目录功能的分配, 只是一种约定, 有很多例外. 从现在起, 你应该尽量将数据只存放在你的个人用户目录下,
+它的全称是 \verb|\home\你的用户名|. 它有一个缩写: \verb|~|. 所以, \verb|cd ~|
+就可以直接进入你的个人目录. 从现在起, 要谨慎使用 \verb|sudo| 命令, 它使你作为为管理员来发布命令,
+管理员可以做任何事情, 比如删除根目录: \verb|rm / -fr| ({\bf 千万不要去尝试!})
+
+你既是你自己机器的管理员, 也是你自己机器的用户. 请时刻对你当前的角色保持清醒. 当你只想做用户时,
+不要做管理员该做的事；当你想做管理员时, 确保你自己知道自己在干啥! 举个例子: 安装和配置应用软件,
+并让它成为系统功能的一部分, 是典型的管理员才做的事情. 你应该一次装好, 以后尽量少折腾. 我们不培养管理员.
+另外, 请千万记住, 在 Linux 下, 不要动不动就重装整个系统. 一般再严重的错误,
+都可以通过部分软件的调整和安装来修复. 不要轻易用关机的方式重启系统, 这有可能导致 Linux 系统崩溃.
+实际上, 如果是安装在服务器或者工作站上的 Linux 系统, 经常会很久不关机, 不重启. 甚至有计算机,
+一生都没关过机. 
+
+Linux 的命令, 实际上是一个个可执行文件. 这些可执行文件分两类, 一类是二进制可执行文件,
+另一类是批处理命令, 又称 shell 脚本文件. 它是一系列 Linux 命令结合在一起完成一个复杂的功能. 
+Linux 的命令之前都必须跟一个称为路径的参数. 比如真正的 \verb|ls| 的完整命令是
+\verb|/bin/ls|. 但是因为系统在环境变量 \verb|PATH| 中规定了 \verb|/bin| 是一个默认的路径,
+所以 \verb|/bin| 下的所有命令, 都不需要输路径前缀了. 你可以用 \verb|env | grep PATH|
+来观察你当前的 \verb|PATH| 变量的内容. 比如我现在的输出是:
+
+\begin{verbatim}
+PATH=/home/hywang/anaconda3/bin:/home/hywang/anaconda3/condabin
+:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+:/usr/games:/usr/local/games:/snap/bin
+\end{verbatim}
+
+这些目录之下的可执行文件, 都不需要路径前缀. 但是注意, 当前目录 \verb|.| 并不在路径中. 因此,
+即便你就在命令所在的目录下, 但是这个目录不在路径中, 你也必须打路径前缀. 这就是我们学习 C 语言时,
+得到的可执行文件, 运行必须加 \verb|./运行文件| 的原因.
+
+
+退回上一层目录的命令是 \verb|cd ..|, 这里 \verb|..| 是上一层目录的意思.
+你可以一直退到 \verb|/|.
+
+Linux 的二进制可执行文件是怎么来的? 它其实就是 C 语言编译出来的. 当你构建文件 \verb|hello.c|:
+
+\begin{verbatim}
+#include <stdio.h>
+#include <stdlib.h>
+int main()
+{
+    printf(“Hello World\n”);
+    exit(0);
+}
+\end{verbatim}
+
+然后运行:
+
+\begin{verbatim}
+gcc -o hello hello.c
+\end{verbatim}
+
+以后, 你就得到一个可执行文件 \verb|hello|, 它本质上和一个 Linux 系统命令没有任何区别. 
+你如果够无聊, 可以将它复制到缺省路径 \verb|/usr/local/bin| 下,  
+
+\begin{verbatim}
+sudo cp hello /usr/local/bin
+\end{verbatim}
+
+然后你就可以在任何目录下运行一个新命令 \verb|hello|. 
+
+最后, 介绍两个很有用的命令: \verb|man| 和 \verb|info|. 它们提供 Linux 命令的官方文档. 比如:
+\verb|man ls|. 这里 \verb|man| 是 manual 的缩写而不是男人.
+
+\section{用 shell 脚本来加速}
+
+首先介绍一个 UNIX 哲学: 一次做好一件具体的事情, 然后将零星的功能链接起来, 成为一个更加丰富的命令.
+或者说: 作为系统架构师, 你在创建具体命令时, 要考虑到更高层次上的重用；而作为用户,
+尽可能利用现有的命令的链接去完成更复杂的功能. 用互联网黑话说, 就是不要重复造轮子.
+
+\subsection{管道和重定向}
+比如: \verb|ls -l| 是列出当前目录下的全部文件, 但这样会导致一屏幕可能放不下.
+\verb|more| 命令则是将一个超出一屏幕的输出, 在输出一满屏内容后暂停, 然后可以逐行(按回车)输出.
+将两个命令用 \verb!|! 管道(pipe) 链接在一起: \verb!ls -l | more! 就是将当前目录下所有文件列出,
+按屏停顿.
+
+我们之前还有一个例子, \verb|env| 实际上是输出全部环境变量, 而 \verb|grep| 是过滤的意思,
+所以 \verb!env | grep PATH! 就是输出全部环境变量中包含 \verb|PATH| 内容的东西.
+
+这些组合都可以灵活搭配使用. UNIX 哲学在所有分支中都是通行的. 
+
+大家可能注意到, shell 本身也是一个命令. 事实上, 目前流行的 shell 有多个版本, 我们使用的是 bash,
+这也是开源社区最通行的版本. 使用 Mac OS 的同学可能注意到 Mac 的默认 shell 不是 bash.
+这个命令本身的位置在 \verb|/bin/bash|. Linux 的命令实际上在 shell 中运行和反馈, shell 则提供 pipe
+和环境变量等等这样的运行环境. 除了 pipe, shell 还有一个重要特性是重定向(redirection).
+
+我们知道, C 语言中输出, 用 \verb|printf| 函数, 本质上是向一个被称为 \verb|stdout|
+的设备文件输出字符流. \verb|printf| 和 \verb|stdout| 都在头文件 \verb|stdio.h| 
+定义. 在正常情况下, \verb|stdout| 是定义在显示器上的. 但我们可以用重定向, 将其重定向为一个文本文件.
+比如:
+\begin{verbatim}
+ls -l > re.txt
+\end{verbatim}
+将当前目录的内容重定向到 \verb|re.txt| 下. 这里 \verb|>| 每一次都会重新生成一个新的输出结果文件.
+而 \verb|>>| 则是在文件结尾新增.
+\begin{verbatim}
+ls -l >> re.txt
+\end{verbatim}
+
+有的时候, 我们写了一个程序, 会有大量的输出, 如果从屏幕走, 记录本身就很麻烦.
+这时你没有必要专门做一套文本文件的读写机制, 而只需要重定向就行了. 除了 stdout 可以重定向,
+stderr 也是可以重定向的. 为了区别, 我们可以分别用 1(可以忽略) 和 2 表示这两个不同的通道. 比如:
+\begin{verbatim}
+./count 10 >std.txt 2>err.txt
+\end{verbatim}
+或者等价地
+\begin{verbatim}
+./count 10 1>std.txt 2>err.txt
+\end{verbatim}
+注意这里 \verb|1>| 和 \verb|2>| 之间不要有空格, 否则会和命令行参数混淆.
+
+这几件规则可以结合在一起发挥作用. 比如:
+\begin{verbatim}
+./count 10 | grep count
+\end{verbatim}
+这里你仔细观察, 就会发现, 管道只接管了 \verb|std|, 而且管道之后的命令的执行和
+\verb|count| 是同步的. 两边的输出甚至可能交错. 这里涉及到进程并行的问题. 我们先不讨论.
+所以我们可以先清理一下输出, 比如把 \verb|stderr| 先重定向掉. 
+\begin{verbatim}
+./count 10 2>/dev/null | grep count
+\end{verbatim}
+
+\subsection{shell 编程}
+
+我们可以做的更过份一点. 比如我们知道在 \verb|/usr/include| 下放了很多 C 语言的头文件,
+比如 stdio.h 就在这里. 现在我们想看一下这些头文件中有多少包含了 \verb|stdout| 这个关键字.
+比如我们想看一下这个文件是在哪个文件定义的. 那么我们可以用命令:
+
+\begin{verbatim}
+grep stdout /usr/include/*
+\end{verbatim}
+
+找到这些文件, 然后记下来, 再一个个文件去读. 这就有点蠢了. 就不能一次搞定? 找到这些包含
+\verb|stdout| 的头文件, 找到一个, 读一个, 这样就很快能发现是谁定义, 还能马上看到定义周围的细节.
+要做到这件事, 我们可以写一个段小的脚本:
+
+\begin{verbatim}
+$ for file in /usr/include/*
+> do
+> if grep -l stdio $file
+> then
+> more $file
+> fi
+> done
+\end{verbatim}
+
+这样就可以愉快地做到了. 注意我们可以用上箭头调用上一次运行的命令, 用 TAB 键自动补齐一个最有可能的命令.
+我们这里用一下上箭头, 你会看到原来刚才那一长串都算一个命令.
+
+考虑到这个命令输入太麻烦, 我们不如把它做成一个可执行脚本算了.
+查看脚本 \verb|first|. 
+
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{crazyfish.bib}
+
+\end{document}
