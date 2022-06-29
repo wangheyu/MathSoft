@@ -1,0 +1,190 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% University Assignment Title Page 
+% LaTeX Template
+% Version 1.0 (27/12/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% WikiBooks (http://en.wikibooks.org/wiki/LaTeX/Title_Creation)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+% Instructions for using this template:
+% This title page is capable of being compiled as is. This is not useful for 
+% including it in another document. To do this, you have two options: 
+%
+% 1) Copy/paste everything between \begin{document} and \end{document} 
+% starting at \begin{titlepage} and paste this into another LaTeX file where you 
+% want your title page.
+% OR
+% 2) Remove everything outside the \begin{titlepage} and \end{titlepage} and 
+% move this file to the same directory as the LaTeX file you wish to add it to. 
+% Then add \input{./title_page_1.tex} to your LaTeX file where you want your
+% title page.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\title{Title page with logo}
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[12pt]{ctexart}
+\bibliographystyle{plain}
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+
+\begin{document}
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+ 
+%----------------------------------------------------------------------------------------
+%	HEADING SECTIONS
+%----------------------------------------------------------------------------------------
+
+\textsc{\LARGE Zhejiang University}\\[1cm] % Name of your university/college
+%
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\HRule \\[0.4cm]
+{ \huge \bfseries 我的Linux工作环境}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+ 
+%----------------------------------------------------------------------------------------
+%	AUTHOR SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+王 \textsc{永康} % Your name
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Student ID:} \\
+\textsc{3210102882} % Supervisor's Name
+\end{flushright}
+\end{minipage}\\[2cm]
+
+% If you don't want a supervisor, uncomment the two lines below and remove the section above
+%\Large \emph{Author:}\\
+%John \textsc{Smith}\\[3cm] % Your name
+
+%----------------------------------------------------------------------------------------
+%	DATE SECTION
+%----------------------------------------------------------------------------------------
+
+{\large \today}\\[0.5cm] % Date, change the \today to a set date if you want to be precise
+
+%----------------------------------------------------------------------------------------
+%	LOGO SECTION
+%----------------------------------------------------------------------------------------
+
+\includegraphics{ZJU.png}\\[1cm] % Include a department/university logo - this will require the graphicx package
+ 
+%----------------------------------------------------------------------------------------
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+
+\begin{abstract}
+
+\vspace{5ex}
+
+蒙智慧的王何宇老师感召,吾得以粗窥Linux之高效,
+故carefully配置My own解药,以应付漫漫作业之考校.
+
+\end{abstract}
+
+\section{我的工作环境}
+
+\vspace{5ex}
+
+\subsection{我的Linux版本}
+
+\vspace{2ex}
+
+Linux发行版本为Ubuntu Linux 22.04,
+内核版本Linux 5.15.0-40-generic x86 64\cite{陈莉君2006Linux}
+
+\subsection{我的调整}
+
+\subsubsection{安装的软件}
+
+\vspace{2ex}
+
+\textbf{Microsoft Edge浏览器}
+
+用于同步浏览器插件和书签,直接迁移Windows环境的浏览器体验
+
+\vspace{2ex}
+
+\textbf{Visual Studio Code}
+
+可以同步写代码的插件和配置,使自己能够快速上手
+
+\subsubsection{额外的配置}
+
+\vspace{2ex}
+
+最主要的是配置了fastgithub,让我能够稍微正常地访问Github
+
+其余还有更换壁纸等让自己看得更舒服的配置调整
+
+\clearpage
+
+\section{我的规划}
+
+\vspace{5ex}
+
+\subsection{使用场景}
+
+\vspace{3ex}
+
+在未来的半年中,写论文时我将极有可能用Linux环境工作.
+这可以避免Windows上过多的娱乐软件,游戏软件对我意志力的干扰
+
+\subsection{我的分析}
+
+\vspace{3ex}
+
+我的工作环境基本是可以满足我当前的需求的 ------
+对于图形界面还有依赖,Windows的操作习惯仍然存在,
+主机依然需要是Windows
+
+而对于未来的工作需求,当我对图形界面的依赖逐渐降低,
+对shell的操作愈发熟练,
+对Linux的使用更加习惯时,
+我可能会从VSCode转向更高效的emacs,
+把虚拟机迁移到物理机上,换用其他发行版的Linux
+
+\subsection{数据安全}
+
+\vspace{3ex}
+
+我的工作文件根目录通常是设在一个文件夹,
+这个文件夹会留存在本地的同时被自动备份到OneDrive上.
+对于重要代码我也会上传至github.
+此外我还有额外的机械硬盘用于定期物理备份资料,
+所以我的工作系统中数据的安全还是颇有保障的.\cite{俞木发2016同步／备份不闹心}
+
+\clearpage
+
+\bibliography{datalib}
+
+\end{document}
