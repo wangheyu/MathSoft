@@ -1,0 +1,4 @@
+\babel@toc {english}{}
+\beamer@sectionintoc {1}{引言}{3}{0}{1}
+\beamer@sectionintoc {2}{计算机往事}{22}{0}{2}
+\beamer@sectionintoc {3}{数学写作}{34}{0}{3}

@@ -1,0 +1,96 @@
+%!Tex Program = xelatex
+%\documentclass[a4paper]{article}
+\documentclass[a4paper]{ctexart}
+\usepackage{xltxtra}
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+
+\title{第三讲: 正则表达式}
+\author{王何宇}
+\date{}
+\begin{document}
+\maketitle
+\pagestyle{empty}
+
+\section{例子讲解}
+
+\begin{verbatim}
+#!/bin/sh
+
+foo=”Hello World”
+echo $foo
+unset foo
+echo $foo
+\end{verbatim}
+
+\verb|unset| 的功能是解除了变量 \verb|foo| 的设置.
+
+
+
+\section{正则表达式的应用}
+
+正则表达式(regular expression) 是定义字符串模式（pattern）的一种规则.
+凡是满足指定规则的字符串, 我们就说和该正则表达式匹配(match). 
+大家其实早就接触过一些正则表达式规则, 比如通配符 \verb|*| 和 \verb|?|.
+前者表示不限长度的任何字符, 后者表示任何单个字符.
+
+详细的正则表达式规则, 请参见: \newline
+https://www.runoob.com/regexp/regexp-tutorial.html
+
+我们直接看一些 shell 脚本中的实际例子. 
+
+\section{find 和 grep}
+
+我们经常遇到的问题是不知道一个文件在哪里. 比如我们知道修改 apt 的源需要修改 source.list 文件,
+但有时因为 linux 版本什么的原因, 我们不知道这个文件到底在哪里. 这时可以用
+\begin{verbatim}
+sudo find / -name sources.list -print
+\end{verbatim}
+从根目录开始以超级用户身份搜索可以确保你不会漏掉任何地方,
+但如果你插了 U 盘, 也许你不想搜索进入 U 盘(因为你很确信你要找的是一个系统文件), 于是可以用参数
+\verb|-mount| 避免搜索全部挂载的文件系统:
+\begin{verbatim}
+sudo find / -mount -name sources.list -print
+\end{verbatim}
+对比运行, 你可以发现现在快了很多, 并且避开了一些奇奇怪怪的地方.
+完整的 \verb|find| 命令是这样的:
+\begin{verbatim}
+find [path] [options] [tests] [actions]
+\end{verbatim}
+这里 \verb|path| 是开始查找的路径；\verb|options| 就是比如 \verb|-mount|
+这样的选项, \verb|tests| 实际上比正则表达式更加丰富一些, 而 \verb|actions|
+可以让你指定查找之后的工作.
+
+这里注意第 65 页例子中 \verb|{}| 和 \verb|\;| 的作用\cite{zhoudx2020universality}.
+
+而 \verb|grep| 的作用是在文间内找关键词, 当然也可以是一堆文件内. 命令格式
+\begin{verbatim}
+grep [options] PATTERN [FILES]
+\end{verbatim}
+这里的 \verb|PATTERN| 是正则表达式. \verb|options| 资料上列举了几个重要的:
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|}
+    \hline
+    \verb|options| & 功能 \\
+    \hline
+    -c & 只输出有几行匹配\\
+    \hline
+    
+  \end{tabular}
+\end{table}
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{crazyfish.bib}
+
+\end{document}
