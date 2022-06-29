@@ -57,6 +57,11 @@ typedef struct {
   DWORD        bV5Reserved;
 } __attribute__((packed)) BITMAPV5HEADER;
 
+void build_bmp(std::string _file,
+			   int _w,
+			   int _h,
+			   char *_image);
+
 #else
 
 /// Do nothing.
