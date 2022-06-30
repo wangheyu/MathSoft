@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <string>
 #include "bitmap.h"
 
 void build_bmp(std::string _file,
@@ -8,33 +7,45 @@ void build_bmp(std::string _file,
 			   int _h,
 			   char *_image)
 {
-	std::ofstream outTest;
-	outTest.open(_file.c_str(), std::ios::binary);
+	int width = _w;
+	int height = _h;
+	std::ofstream outFile(_file.c_str(), std::ios::binary);
+	BITMAPFILEHEADER bmpFileHeader;
+	BITMAPINFOHEADER bmpInfoHeader;
+	bmpInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmpInfoHeader.biWidth = width;
+	bmpInfoHeader.biHeight = height;
+	bmpInfoHeader.biPlanes = 1;
+	bmpInfoHeader.biBitCount = 24;
+	bmpInfoHeader.biCompression = 0;
+	bmpInfoHeader.biSizeImage = width * height * 3;
+	bmpInfoHeader.biXPelsPerMeter = 2834;
+	bmpInfoHeader.biYPelsPerMeter = 2834;
+	bmpInfoHeader.biClrUsed = 0;
+	bmpInfoHeader.biClrImportant = 0;
 
-	BITMAPFILEHEADER bmpFileHead;
-	BITMAPINFOHEADER bmpInfoHead;
+	((char*)(&bmpFileHeader.bfType))[0] = 'B';
+	((char*)(&bmpFileHeader.bfType))[1] = 'M';
+	bmpFileHeader.bfReserved1 = 0;
+	bmpFileHeader.bfReserved2 = 0;
+	bmpFileHeader.bfOffBits = bmpInfoHeader.biSize + sizeof(BITMAPFILEHEADER);
+	bmpFileHeader.bfSize = bmpFileHeader.bfOffBits + bmpInfoHeader.biSizeImage;
 
-	bmpInfoHead.biSize = sizeof(BITMAPINFOHEADER);
-	bmpInfoHead.biWidth = _w;
-	bmpInfoHead.biHeight = _h;
-	bmpInfoHead.biPlanes = 1;
-	bmpInfoHead.biBitCount = 24;
-    bmpInfoHead.biCompression = 0;
-    bmpInfoHead.biSizeImage = bmpInfoHead.biWidth * bmpInfoHead.biHeight * 3;
-    bmpInfoHead.biXPelsPerMeter = 2834;
-    bmpInfoHead.biYPelsPerMeter = 2834;
-    bmpInfoHead.biClrUsed = 0;
-    bmpInfoHead.biClrImportant = 0;
+	outFile.write(reinterpret_cast<char*>(&bmpFileHeader), sizeof(BITMAPFILEHEADER));
+	outFile.write(reinterpret_cast<char*>(&bmpInfoHeader), sizeof(BITMAPINFOHEADER));
 
-	((char*)(&bmpFileHead.bfType))[0] = 'B';
-	((char*)(&bmpFileHead.bfType))[1] = 'M';
-	bmpFileHead.bfReserved1 = 0;
-	bmpFileHead.bfReserved2 = 0;
-	bmpFileHead.bfOffBits = bmpInfoHead.biSize + sizeof(BITMAPFILEHEADER);
-	bmpFileHead.bfSize = bmpInfoHead.biSizeImage + bmpFileHead.bfOffBits;
+	// char *cache = new char[bmpInfoHeader.biSizeImage];
 
-	outTest.write(reinterpret_cast<char*>(&bmpFileHead), sizeof(BITMAPFILEHEADER));
-	outTest.write(reinterpret_cast<char*>(&bmpInfoHead), sizeof(BITMAPINFOHEADER));
-	outTest.write(_image, bmpInfoHead.biSizeImage);
-	outTest.close();
+	// for (int j = 0; j < height; j++)
+	// 	for (int i = 0; i < width; i++)
+	// 	{
+	// 		int pos = j * width + i;
+	// 		cache[pos * 3] = 0;
+	// 		cache[pos * 3 + 1] = 0;
+	// 		cache[pos * 3 + 2] = 255;
+	// 	}
+	outFile.write(_image, bmpInfoHeader.biSizeImage);
+	//	delete [] cache;
+	outFile.close();
 };
+

@@ -1,6 +1,8 @@
 #ifndef __CRAZYFISH_BITMAP__
 #define __CRAZYFISH_BITMAP__
 
+#include <string>
+
 typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned int DWORD;

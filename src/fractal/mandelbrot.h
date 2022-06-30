@@ -3,13 +3,14 @@
 class Iteration
 {
 protected:
-	std::complex<double> iteration_point{0.0, 0.0}; 
+	std::complex<double> iteration_point{0.0, 0.0};
 	int iteration_times = 0;
 	int max_iteration = 20;
-	std::complex<double> iteration_const;
-	bool flag_disconvergence = false;
+	std::complex<double> iteration_const{0.0, 0.0};
 	bool flag_stop = false;
+	bool flag_disconvergence = false;
 public:
+	Iteration(){};
 	Iteration(std::complex<double> _ip,
 			  int _max_it,
 			  std::complex<double> _ic) :
@@ -28,14 +29,13 @@ public:
 	{
 		return iteration_point;
 	};
-	std::complex<double> get_iteration_const()
-	{
-		return iteration_const;
-	};
-
 	int get_iteration_times()
 	{
 		return iteration_times;
+	};
+	std::complex<double> get_iteration_const()
+	{
+		return iteration_const;
 	};
 	int get_max_iteration()
 	{
@@ -49,6 +49,7 @@ public:
 class Manderbrot : public Iteration
 {
 public:
+	Manderbrot() : Iteration() {};
 	Manderbrot(std::complex<double> _ip,
 			   int _max_it,
 			   std::complex<double> _ic) : Iteration(_ip, _max_it, _ic) {};
@@ -57,9 +58,9 @@ public:
 			   int _max_it,
 			   double _cx,
 			   double _cy) : Iteration(_ix, _iy, _max_it, _cx, _cy) {};
-	void forward_step();
-	bool stop_criterion();
-	bool is_disconvergence();
+	virtual void forward_step();
+	virtual bool stop_criterion();
+	virtual bool is_disconvergence();
 };
 
 void Manderbrot::forward_step()
@@ -76,7 +77,6 @@ bool Manderbrot::stop_criterion()
 {
 	return flag_stop;
 };
-
 bool Manderbrot::is_disconvergence()
 {
 	return flag_disconvergence;
