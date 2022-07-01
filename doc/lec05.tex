@@ -1,0 +1,265 @@
+%!Tex Program = xelatex
+%\documentclass[a4paper]{article}
+\documentclass[a4paper]{ctexart}
+\usepackage{xltxtra}
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+
+\title{第五讲: 项目目录维护}
+\author{王何宇}
+\date{}
+\begin{document}
+\maketitle
+\pagestyle{empty}
+
+\section{项目文件和系统目录}
+现在我们注意到, 一个合理规划的项目, 它下面的目录结构首先应该井然有序. 一般来说, 遵从一些默认的约定:
+
+\begin{table}[!phb]
+  \centering
+  \begin{tabular}{|c|l|}
+    \hline
+    \bf{目录名} & \bf{存放内容} \\
+    \hline
+    \verb|doc| & 文档, 说明. \\
+    \hline
+    \verb|src| & 源代码, \verb|cpp| 后缀. \\
+    \hline
+    \verb|include| & 头文件, \verb|h| 后缀. \\
+    \hline
+    \verb|lib| & 库文件, \verb|a|, \verb|o|, \verb|so| 后缀. \\
+    \hline
+    \verb|bin| & 可执行文件. \\
+    \hline
+    \verb|example| & 例子. \\
+    \hline
+  \end{tabular}
+  \caption{常见的目录约定}
+  \label{tab::dir}
+\end{table}
+
+之所以会出现这种结构分布, 和 Unix 体系下 C\/C++ 的规则有关. 我们知道,
+C\/C++ 的风格是主程序短小精悍, 而实际功能由各个函数完成. 函数部分有分为声明,
+也就是定义和数据结构和函数的使用形式和接口；而函数的具体实现则又放在具体的库文件中.
+库文件是一种预先编译好的二进制代码. 它的形式一般是 \verb|.o|, \verb|.a| 或者
+\verb|.so| 后缀的文件. 这里 \verb|.o| 就是一个源码的直接编译后版本. 比如我们可以尝试一下:
+\begin{verbatim}
+g++ -o bitmap.cpp
+\end{verbatim}
+我们就看到对应生成了一个 \verb|bitmap.o| 文件. 将这个文件和 \verb|bitmap.h| 文件一起交给用户,
+用户就可以在他的程序中使用 \verb|bitmap.h| 中定义的各种函数了, 此时用户并不需要获得
+\verb|bitmap.cpp| 文件. 这样有助保持这个程序的稳定性.
+因为避免了用户直接去改源码所导致的不可知问题. 有时我们会将多个功能接近的函数的二进制文件打包成一个库文件,
+这样用户得到一个库文件就可以使用其中的全部函数. 这种文件, 如果后缀是 \verb|a|, 则称为静态库；
+如果后缀是 \verb|so|, 称为动态库. 它们的区别是, 当用户调用静态库时,
+这部分函数二进制代码就一起嵌入了用户的最终可执行文件；而用户调用动态库时,
+大部分函数二进制代码不会嵌入最终可执行文件真正在运行时, 只有在这个可执行文件真正被执行时, 由操作系统临时对接,
+完成函数功能. 动态库的好处是生成的最终代码比较小, 而且不容易发生代码泄露, 相对更加安全.
+因此我们现在基本上都采用动态库. 尝试一下:
+
+\begin{verbatim}
+g++ -c -fPIC bitmap.cpp
+g++ -shared -o libbitmap.so bitmap.o
+\end{verbatim}
+
+这里 \verb|-fPIC| 的含义是生成一个相对寻址的二进制文件. 这个和汇编结构有关, 这里不详述.
+因为是动态库, 所以要能够在内存中根据相对地址而不是绝对地址运行. 上面的命令第一行产生
+\verb|bitmap.o| 文件. 而第二行将此文件转换成动态链接库, 也即 \verb|libbitmap.so| 文件.
+动态链接库总是以 \verb|lib*.so| 的形式命名, 也是一种约定.
+
+现在我们可以将 \verb|bitmap.h| 和 \verb|libbitmap.so| 分别放到 \verb|~\include|
+和 \verb|~\lib| 的目录下(只要做链接就可以, 如果没有目录可以直接建立),
+这样我们就可以在个人目录的范围下使用 \verb|bitmap| 了.
+\begin{verbatim}
+ln -s ~/Projects/MathSoft/src/bmp/bitmap.h ~/include
+ln -s ~/Projects/MathSoft/src/bmp/libbitmap.so ~/lib
+\end{verbatim}
+
+我们可以在 \verb|~\tmp| 下尝试一下看看.
+\begin{verbatim}
+g++ -o test test_bmp.cpp -I../include -L../lib -lbitmap
+\end{verbatim}
+这里 \verb|-I| 给出了头文件位置, 而 \verb|-L| 给出了库文件的位置.
+\verb|-l| 则指明要调用哪个库, 这里的规则是 \verb|-l| 加上库文件
+\verb|libxxx.so| 中的 \verb|xxx| 部分, 也即 \verb|-lxxx|.
+然后我们顺利地得到了可执行文件 \verb|test|, 但当我们运行时, 会得到错误:
+\begin{verbatim}
+./test: error while loading shared libraries: libbitmap.so: 
+cannot open shared object file: No such file or directory
+\end{verbatim}
+
+这个错误充分体现了动态库的调用机制, 在生成可执行文件时, 只是标记一下,
+并不检查文件是否正常. 只有在运行时, 它才会去寻找这个 \verb|so| 文件并试图执行.
+但是从效率出发, 它并不是直接去读文件系统, 而是从系统维护的一个数据库中去检索.
+因为我们还没有注册我们的 \verb|libbitmap.so| 文件, 所以它找不到.
+
+现在来注册, 我们在 \verb|/etc/ld.so.conf.d/| 这个目录下新建一个文本文件
+\verb|hywang.conf| (你可以用你自己的名字), 内容只有一行: 
+\begin{verbatim}
+/home/hywang/lib
+\end{verbatim}
+这样以后凡是存放或者链接到这个目录的 \verb|.so| 文件, 都会被系统自动找到.
+系统更新数据库会有一个时间, 我们手动更新一下:
+\begin{verbatim}
+sudo ldconfig
+sudo ldconfig -p | grep bitmap
+\end{verbatim}
+第一行是更新数据库, 第二行则是检查一下数据库里是否已经有我们的 \verb|libbitmap.so|
+文件了. 现在回到 \verb|~/tmp| 下, 不用重新编译, 我们就发现我们 \verb|test|
+文件可以运行了. 
+
+所以一个系统级别的应用, 将会在系统的头文件目录和库文件目录留下头文件和动态链接库.
+比如我们熟悉的 \verb|math.h| 文件, 当我们调用它时, 需要 \verb|#include <math.h>|,
+然后在编译时, 需要 \verb|-lm|. 现在我们知道, 系统中除了 \verb|#include <math.h>| 以外,
+必然还存在 \verb|libm.so| 文件. 用我们学过的 \verb|find| 技巧将它们找出来.
+\begin{verbatim}
+find / -mount -name math.h -print
+find / -mount -name libm.so -print
+\end{verbatim}
+
+现在我们总结一下, 一个项目, 在开发完毕后, 项目目录下 \verb|include| 里存放头文件,
+\verb|src| 里存放源文件(\verb|cpp| 文件). 然后编译时, 在\verb|lib| 产生 \verb|so| 文件,
+在 \verb|bin| 产生可执行文件. 最后在安装阶段, 将全部头文件复制(或链接)到用户的系统头文件目录
+(比如 \verb|\usr\local\include|), 将库文件复制(或链接)到用户的系统库文件目录
+(比如 \verb|\usr\local\lib|), 然后用户就可以在全系统愉快地使用了.
+
+以上工作, 颇为繁琐, 且容易出错. 这就需要引出我们的一个项目自动生成工具: \verb|make|.
+
+\section{自动编译脚本 make}
+
+就这个 bitmap 的项目, 我们现在来做个简单的整理. 我们需要做的事情是:
+
+\begin{enumerate}
+\item 在 \verb|lib| 目录中生成 \verb|libbitmap.so| 文件,
+  要用到的文件是 \verb|bitmap.h|;
+\item 在 \verb|bin| 目录中生成 \verb|test| 文件,
+  要用到的文件是 \verb|bitmap.h|, \verb|libbitmap.so|;
+\item 在用户指定的目录中创建头文件和库文件的链接,
+  用户的可执行目录中创建测试的可执行文件. 
+\end{enumerate}
+
+这里的每一步都涉及若干行满是参数的命令, 为了避免手工出错,
+Unix\/Linux 社区提供了多个解决方案, 最常见的之一是 \verb|make| 命令.
+如果没有安装 \verb|make|, 请用 \verb|apt| 安装:
+\begin{verbatim}
+sudo apt install make
+\end{verbatim}
+
+命令 \verb|make| 首先要提供一个特殊的脚本文件, 一般命名为 \verb|Makefile|.
+这个文件中指定了编译的规则. 基本规则是:
+\begin{verbatim}
+目标 : 所需文件
+    脚本命令
+\end{verbatim}
+各目标之间如果有依赖, 则会根据依赖自动回溯, 确保依赖完整. 比如目标 A 需要目标 B 所生成的文件,
+那么当目标 B 的内容发生变化时, \verb|make| 会确保目标 A 也被重新编译.
+
+现在来写一个最简单的 \verb|Makefile|. 我们先将 \verb|bitmap| 项目的目录结构调整为
+\begin{verbatim}
+include/bitmap.h
+src/bitmap.cpp
+\end{verbatim}
+
+我们进入 \verb|bitmap| 项目目录, 构建 \verb|Makefile| 文件, 内容为:
+\begin{verbatim}
+libbitmap.so : bitmap.o
+	g++ -shared -o libbitmap.so bitmap.o
+
+bitmap.o : src/bitmap.cpp include/bitmap.h
+	g++ -c -fPIC src/bitmap.cpp -Iinclude 
+\end{verbatim}
+然后在 \verb|bitmap| 目录下执行 \verb|make|, 我们看到, 自动编译开始生成 \verb|bitmap.o|
+和 \verb|libbitmap.so| 文件. 如果我们删除 \verb|libbitmap.so|, 再打一次 \verb|make|,
+我们看到只会重新生成 \verb|libbitmap.so| 文件. 但是如果删除 \verb|bitmap.o| 文件, 再打一次
+\verb|make|, 这时发现两个文件都会重新生成. 因为前者依赖后者, 当后者变化时, 前者也不可靠,
+必须重新生成以保证依赖. 当你有上千个文件互相依赖时, 这一机制就非常重要了.
+
+文件 \verb|Makefile| 中的脚本命令本质上就是 Shell 脚本, 所以我们实际上可以干很多事. 比如,
+我们希望创建的库文件都放在 \verb|lib| 目录下, 而可执行文件都放在 \verb|bin| 目录下,
+我们可以这样修改 \verb|Makefile|.
+\begin{verbatim}
+lib/libbitmap.so : src/bitmap.cpp include/bitmap.h 
+	g++ -c -fPIC src/bitmap.cpp -Iinclude 
+	g++ -shared -o libbitmap.so bitmap.o
+	@if [ ! -d lib ]; then mkdir lib; fi
+	@mv libbitmap.so lib
+	rm bitmap.o
+\end{verbatim}
+
+这里我们不再把中间文件 \verb|bitmap.o| 作为一个目标, 而且每次编译完成,
+还将这个文件删除了, 保持目录干净. 注意我们这里用 Shell 脚本的 \verb|if|
+命令判定是否已经建立了 \verb|lib| 目录.
+
+我们还可以建立没有依赖的功能性目标, 比如
+\begin{verbatim}
+clean:
+	rm lib/libbitmap.so
+\end{verbatim}
+这样我们只要打 \verb|make clean| 就可以恢复编译前的样子.
+但这里有一件尴尬的事情, 如果正好有一个文件名字叫 \verb|clean|, 比如我们执行
+\begin{verbatim}
+touch clean
+\end{verbatim}
+现在 \verb|make clean| 就会认为是需要更新这个文件, 得不到正确的响应. 解决的办法是做个标记:
+\begin{verbatim}
+.PHONY: clean
+\end{verbatim}
+这种标记称为伪目标, 就是不管怎样, 都必须执行的目标. 现在我们完善这个编译的构建:
+\begin{verbatim}
+bin/test : src/test_bmp.cpp include/bitmap.h lib/libbitmap.so
+	g++ -o test src/test_bmp.cpp -Iinclude -Llib -lbitmap 
+	@if [ ! -d bin ]; then mkdir bin; fi
+	@mv test bin
+
+lib/libbitmap.so : src/bitmap.cpp include/bitmap.h 
+	g++ -c -fPIC src/bitmap.cpp -Iinclude 
+	g++ -shared -o libbitmap.so bitmap.o
+	@if [ ! -d lib ]; then mkdir lib; fi
+	@mv libbitmap.so lib
+	rm bitmap.o
+
+clean:
+	rm lib/libbitmap.so bin/test bin/*.bmp
+
+install: lib/libbitmap.so bin/test
+	@if [ ! -d ~/include ]; then mkdir ~/include; fi
+	@if [ ! -d ~/lib ]; then mkdir ~/lib; fi
+	@if [ ! -d ~/bin ]; then mkdir ~/bin; fi
+	ln -s lib/libbitmap.so ~/lib
+	ln -s include/bitmap.h ~/include
+	ln -s bin/test ~/bin
+
+.PHONY: clean install
+\end{verbatim}
+
+\section{注释和文档}
+
+代码必须有规范的文档. 否则这段代码将不可维护, 也很难共享. 程序必须有文档, 否则用户将无法使用.
+在 Linux 社区中, 这两件事情往往通过一个被称为 doxygen 的工具统一完成.
+首先请确认安装了 doxygen:
+\begin{verbatim}
+sudo apt install doxygen
+\end{verbatim}
+然后如果有可能的话, 开启你的编辑软件的辅助工具. Emacs 下就是 doxmacs, 而 vscode 则可以在它的
+Market Place 找到各种支持. doxymacs 已经停止维护, 并且不在 apt 源里, 所以不得不手动安装.
+
+doxygen 巧妙利用注释符号的自由空间, 以特殊格式的注释符号对程序注释进行标记. 因为程序注释和文档具有共性,
+因此有可能将两件事情在一个框架内解决.
+
+doxygen 的文档可以从 apt 获得:
+\begin{verbatim}
+sudo apt install doxygen-doc
+\end{verbatim}
+
+doxygen 支持 latex, 因此可以引入公式. doxygen 可以中文化, 会有一些困难, 但不是不可以克服.
+
+\bibliographystyle{plain}
+\bibliography{crazyfish.bib}
+
+\end{document}
