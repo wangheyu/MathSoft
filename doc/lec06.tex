@@ -1,0 +1,181 @@
+%!Tex Program = xelatex
+%\documentclass[a4paper]{article}
+\documentclass[a4paper]{ctexart}
+\usepackage{xltxtra}
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+
+\title{第六讲: 常用数学软件库介绍}
+\author{王何宇}
+\date{}
+\begin{document}
+\maketitle
+\pagestyle{empty}
+
+octave / maximu
+
+我们主要介绍开源库, 一些闭源的库如 Intel 的 MKL, 不在我们的考虑范围. 所谓开源, 指的并不是免费,
+而是指软件供应者必须提供源代码给最终用户. 一些著名的开源协议, 如 GPL 确保这个开源是向下依赖的.
+因此, 当你打算在商业项目 (一般科学的宗旨就是开放, 所以科研项目几乎可以随意使用开源软件)
+中使用开源软件时, 你必须仔细检查相关的开源协议. 因为有的协议要求哪怕你只用了它的一行代码,
+你也必须开放项目的全部代码. 开源的目的是创造一个稳定, 繁荣和可靠的软件共享社区. 让每个人都能为此作出贡献.
+是一种在线的乌托邦式理想. 开源社区有几个核心组织, 首先是自由软件基金会 Free Software Foundation.
+它提供了一个 Linux 的发行版 GNU, 但几乎没什么人用. 但与此同时提供的各种应用软件倒是非常的流行于开源社区.
+另一个就是最大的同性交友社区: github. 但是我觉得这是对女性程序员的不尊重. 事实上, 有很多伟大的女性程序员.
+比如世界上第一个程序员就是女性, 她是伟大的数学家 Charles Babbage 的助手 Ada Byron.
+她同时也是 Lord Byron 的女儿. Babbage 发明了分析机, 尝试用蒸汽机来实现数值运算.
+他的设计和我们今天的计算机在原理上惊人的一致. 只是缺乏了必要物理基础: 电力和半导体. 所以他最终悲惨地失败了.
+耗尽了当年英国几乎全部的科研经费, 造出了像一座工厂那样大的蒸汽计算机, 最终仍然不能满足实际计算的要求.
+而 Ada 作为他的助手, 从纺织机得到启发, 发明了类似穿孔机这样的编程机构, 并且完成了一些早期的程序.
+为了纪念她, 我们现在仍然有一门算法语言名字叫 Ada.
+
+在我工作的经历中, 也曾经遇到过一些伟大的女性程序员, 或者本质上是很会写程序的女性应用数学家. 
+
+\section{GSL: GNU Scientific Library}
+一般来说, 获得一个开源的程序往往有两个途径, 其一是直接从 apt 源里安装. 比如:
+\begin{verbatim}
+sudo apt install libgsl-dev
+\end{verbatim}
+一般对于这种需要二次开发的程序, 我们需要安装它的开发者版本, 就是这里的 \verb|dev|.
+
+安装完之后, 可以观察一下它的安装位置. 我们可以看到它的头文件在
+\begin{verbatim}
+/usr/include/gsl
+\end{verbatim}
+而库文件在
+\begin{verbatim}
+/usr/lib/x86_64-linux-gnu/
+\end{verbatim}
+这两个都是系统默认目录, 因此我们直接就可以在程序中调用 \verb|gsl| 提供的各种函数了.
+用 apt 安装的优势就是安装方便, 快捷. 缺点可能是缺少个人定制, 版本未必是最新的.
+接下去为了使用这个软件库, 我们需要搞到它的文档.
+\begin{verbatim}
+sudo apt install gsl-doc
+\end{verbatim}
+然后文档在这里:
+\begin{verbatim}
+/usr/share/doc/gsl-doc-pdf
+\end{verbatim}
+
+我们注意到 apt 中的 gsl 版本是 2.5, 我们直接访问它的网站:
+\begin{verbatim}
+https://www.gnu.org/software/gsl/
+\end{verbatim}
+而网站上提供的最新版本是 2.7,
+所以我们同时下载的源码, 以及 2.7 的说明书. 
+
+
+根据说明书, 我们来尝试一下 545 页提供的数值求解微分方程的程序.
+\begin{verbatim}
+gcc -o gsl_pde gsl_pde.c -lgsl 
+\end{verbatim}
+发现缺少点啥?
+\begin{verbatim}
+gcc -o gsl_pde gsl_pde.c -lgsl -lm
+\end{verbatim}
+现在没事了. 运行一下就能得到数值解.
+
+现在我们尝试一下手动安装最新的 2.7 版本的 gsl. 首先解压得到的源代码.
+\begin{verbatim}
+tar -zxvf gsl-latest.tar.gz
+\end{verbatim}
+从解压后的源码我们就能看到比 apt 内丰富的多的内容. 现在尝试编译. 这里大家应该看一下
+README 和 INSTALL 这两个文件. 里面介绍了如何安装. 不过 GNU 的软件一般都是一个套路,
+所以有经验的同学可以继续.
+
+\begin{verbatim}
+./configure --prefix=/home/hywang
+\end{verbatim}
+这个脚本检查你是否满足安装的条件. 如果不满足, 你需要根据它的提示补充. 如果没有任何提示,
+就说明可以安装. 安装就是我们熟悉的 \verb|make|. 这里的 \verb|--prefix| 指定安装目录.
+
+这个编译需要一点时间. 安装好了以后会用么?
+
+\section{BLAS (Basic Linear Algebra Subprograms)}
+
+我们实际上已经安装了一个版本的 BLAS, 就是 gsl 里面带的这个. 同时, 也有独立的 apt 版本.
+\begin{verbatim}
+sudo apt install libblas-dev
+\end{verbatim}
+
+然后还是找文档...官网找:
+\begin{verbatim}
+https://www.netlib.org/blas/
+\end{verbatim}
+
+然后发现用不了, 因为这个 BLAS 是 Fortran 的. 好在, 它也提供了 C 接口. 但是更加好的,
+官网指出有一个优化的实现: ATLAS. 去源里看一下, 果然有:
+\begin{verbatim}
+sudo apt install libatlas-base-dev
+sudo apt install libatlas-doc
+\end{verbatim}
+第二条顺便把文档装上了. 在官网顺便下载了一个 cblas 的压缩包, 里面有 examples,
+测试一下, 可以用.
+
+\section{LAPACK: Linear Algebra PACKage}
+
+顾名思义, 这个是专门用来求解线性问题的. 俗称解矩阵. 这个安装特别鬼畜:
+\begin{verbatim}
+sudo apt install liblapack-dev
+sudo apt install liblapacke-dev
+sudo apt install liblapack-doc
+\end{verbatim}
+
+第二条真不是打错, 这一条专门安装头文件. 然后在第三条安装的文档里,
+我们可以看到一个例子. 编译通过.
+
+这里再推荐一个专门用来求解线性问题的 C++ 库: eigen. 这个库短小精悍,
+用了都说好.
+\begin{verbatim}
+sudo apt install libeigen3-dev
+sudo apt install libeigen3-doc
+\end{verbatim}
+
+这个怎么用自己探索一下. 
+
+\section{boost}
+
+Boost 是 C++ 的一个未来的标准库. 它里面用了最新的 C++ 特性,
+并有一定的可能会吸收到未来的 C++ 标准中去. 它里面也有大量的算法程序和数值计算程序.
+
+这个源内安装很偷懒:
+\begin{verbatim}
+sudo apt install libboost-all-dev
+\end{verbatim}
+
+\section{Python 和 Anaconda}
+
+上清华的源吧.
+
+\section{R 是什么? 听说很有用.}
+
+看一下syanaptic. r-base ...
+
+去官网下载一个...
+\begin{verbatim}
+https://www.r-project.org/
+\end{verbatim}
+
+\section{应用软件}
+有限元软件: deal.II
+
+Matlab 平替: octave
+
+Photo shop 平替: gimp
+
+steam 源里就有...
+...
+
+
+
+
+\bibliographystyle{plain}
+\bibliography{crazyfish.bib}
+
+\end{document}

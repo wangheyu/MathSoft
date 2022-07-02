@@ -1,0 +1,80 @@
+%!Tex Program = xelatex
+%\documentclass[a4paper]{article}
+\documentclass[a4paper]{ctexart}
+\usepackage{xltxtra}
+\usepackage{url}
+%\setmainfont[Mapping=tex-text]{AR PL UMing CN:style=Light}
+%\setmainfont[Mapping=tex-text]{AR PL UKai CN:style=Book}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei:style=Regular}
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Sharp:style=Regular}
+%\setmainfont[Mapping=tex-text]{AR PL KaitiM GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{AR PL SungtiL GB:style=Regular} 
+%\setmainfont[Mapping=tex-text]{WenQuanYi Zen Hei Mono:style=Regular} 
+
+
+\title{第七讲: 图像的输出和进阶科学计算软件}
+\author{王何宇}
+\date{}
+\begin{document}
+\maketitle
+\pagestyle{empty}
+
+\section{The Tik Z and PGF Packages}
+
+这个包已经包含在 texlive-full 中. 只需直接使用即可. 所谓矢量图形, 表示图形的元素都是公式定义的,
+在显示时由显示软件或格式 (pdf, eps) 动态生成, 因此可以无极缩放, 不会出现锯齿.
+所以矢量图形具有极高的显示和打印质量, 并且存储量极小. 我们在撰写文章时, 应该尽量采用这种形式.
+和矢量图形相对的, 就是点阵图形, 我们已经掌握了它们的基本规则, 就是位图. 位图一旦缩放,
+就必然会出现图像失真和锯齿. 
+
+\begin{itemize}
+\item 项目主页: \url{https://github.com/pgf-tikz/pgf}
+\item 学习资料: 群内文件: \verb|LatexMan/tikzpgfmanual.pdf|
+\item 学习方式: 快速阅读并重现: Part I Tutorials and Guidelines 部分的全部例子.
+\item 辅助应用: 源内有应用: tikzit 可以帮助学习如何绘制图形.
+\item 资源网站: \url{https://texample.net/tikz/examples/}
+\end{itemize}
+
+\section{全面的绘图工具: gnuplot}
+
+Gnu 出品必属精品. 能以极高效率产生各种图形, 并且能够对接各种可能的应用. 它可以和 latex 和 tikz
+配合使用. 安装下载既可以从项目主页获得最新源码编译, 也可以直接从源里安装:
+\begin{verbatim}
+sudo apt install gnuplot
+\end{verbatim}
+
+\begin{itemize}
+\item 项目主页: \url{http://www.gnuplot.info/}
+\item 学习资料: \verb|sudo apt get install gnuplot-doc|
+\item 辅助资料: 群内文件: \verb|数学软件| 目录下有资料.
+\item 学习方式: \verb|/usr/share/doc/gnuplot/tutorial.pdf| 仔细看一遍.
+\item 资源网站: \url{http://www.gnuplot.info/demo/}
+\end{itemize}
+
+这个软件甚至具有很强的计算功能!
+
+\section{高级科学计算软件: deal.II}
+
+这是一个已经开发了 20 余年的结构化自适应有限元软件包. 计算能力非常强大,
+可以从事科研和工业级别计算. 它的一个优点是提供了全面的文档, 例子和学习资料.
+这个软件包新手编译安装较为困难, 建议直接安装源内项目:
+\begin{verbatim}
+sudo apt install libdeal.ii-dev
+sudo apt install libdeal.ii-doc
+\end{verbatim}
+由于大量消耗计算资源, 不建议在虚拟机下使用.
+它的最合适硬件环境应该是游戏本级别以上的工作站或中小型集群.
+
+\begin{itemize}
+\item 项目主页: \url{https://www.dealii.org/}
+\item 学习资料: 安装 doc 后, 在 \verb|/usr/share/doc/libdeal.ii-doc/| 目录下,
+  有 \verb|examples| 和 \verb|html| 两个目录, 复制到个人文件夹下.
+\item 辅助资料: 视频课程: \url{https://www.bilibili.com/video/av57103047/}
+\item 学习方式: 先去学一遍有限元, 然后将 \verb|html| 中的 tutorial 看一遍,
+  再将 \verb|examples| 中程序跑一遍. 
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{crazyfish.bib}
+
+\end{document}
