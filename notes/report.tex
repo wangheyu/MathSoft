@@ -1,0 +1,120 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{ctex} % 加载 ctex 宏包以支持中文
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\title{基于 Robbins-Monro 方法的随机逼近数值算例设计与实现}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{引言}
+Robbins-Monro 方法是一种经典的随机逼近算法，最早由 Herbert Robbins 和 Sutton Monro 在 1951 年提出。该方法通过迭代更新的方式，利用带噪声的观测数据逐步逼近目标值。尽管原论文中并未包含具体的数值算例，但这一方法在统计学、机器学习和优化领域具有广泛的应用。
+
+本文旨在通过一个简单的数值算例，展示如何使用 Robbins-Monro 方法来估计未知参数，并验证其有效性。
+
+\section{方法介绍}
+\subsection{目标问题}
+假设我们有一个未知的参数 $\theta^*$，并且我们只能通过带噪声的梯度观测来接近它。目标是使用 Robbins-Monro 方法找到 $\theta^*$ 的估计值。
+
+目标函数定义为：
+$$
+f(\theta) = (\theta - \theta^*)^2
+$$
+
+我们无法直接观测到 $f(\theta)$，而是通过带噪声的梯度观测 $Y_n$ 来逼近：
+$$
+Y_n = 2(\theta_n - \theta^*) + \epsilon_n
+$$
+其中，$\epsilon_n$ 是均值为零的随机噪声（例如正态分布 $N(0, 1)$）。
+
+\subsection{迭代公式}
+Robbins-Monro 方法的核心迭代公式为：
+$$
+\theta_{n+1} = \theta_n - a_n Y_n
+$$
+其中：
+\begin{itemize}
+    \item $\theta_n$ 是第 $n$ 次迭代的估计值。
+    \item $a_n > 0$ 是步长序列，满足以下条件：
+          \begin{enumerate}
+              \item $\sum_{n=1}^\infty a_n = \infty$
+              \item $\sum_{n=1}^\infty a_n^2 < \infty$
+          \end{enumerate}
+\end{itemize}
+
+为了简单起见，可以选择 $a_n = \frac{1}{n}$。
+
+\section{数值实验}
+\subsection{参数设置}
+\begin{itemize}
+    \item 真实参数值：$\theta^* = 3$
+    \item 初始估计值：$\theta_0 = 0$
+    \item 随机噪声：$\epsilon_n \sim N(0, 1)$
+    \item 步长序列：$a_n = \frac{1}{n}$
+    \item 迭代次数：1000 次
+\end{itemize}
+
+\subsection{实现代码}
+以下是基于 Python 的实现代码：
+\begin{verbatim}
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 参数设置
+theta_star = 3  # 真实参数值
+num_iterations = 1000  # 迭代次数
+theta = 0  # 初始估计值
+
+# 存储每次迭代的结果
+theta_history = [theta]
+
+# 迭代过程
+for n in range(1, num_iterations + 1):
+    # 计算带噪声的梯度观测
+    epsilon = np.random.normal(0, 1)  # 随机噪声
+    Y_n = 2 * (theta - theta_star) + epsilon
+    
+    # 更新估计值
+    a_n = 1 / n  # 步长
+    theta = theta - a_n * Y_n
+    
+    # 记录当前估计值
+    theta_history.append(theta)
+
+# 输出最终估计值
+print("最终估计值:", theta)
+
+# 可视化结果
+plt.plot(theta_history)
+plt.axhline(y=theta_star, color='r', linestyle='--', label='真实值')
+plt.xlabel('迭代次数')
+plt.ylabel('估计值')
+plt.title('Robbins-Monro 方法估计过程')
+plt.legend()
+plt.show()
+\end{verbatim}
+
+\section{结果分析}
+\subsection{收敛性}
+通过运行上述代码，我们可以观察到估计值 $\theta_n$ 随着迭代次数增加逐渐收敛到真实值 $\theta^* = 3$。尽管由于观测中存在随机噪声 $\epsilon_n$，估计值可能会有一定的波动，但步长 $a_n$ 的递减特性确保了最终的收敛。
+
+\subsection{噪声影响}
+随机噪声的存在使得估计值在初期可能存在较大的偏差，但随着迭代次数的增加，噪声的影响逐渐减弱，估计值趋于稳定。
+
+\section{总结}
+本文通过一个简单的数值算例，展示了 Robbins-Monro 方法的基本原理及其应用。实验结果表明，该方法能够有效逼近目标值，即使在存在噪声的情况下也能保证良好的收敛性。此外，步长序列的选择对算法的性能至关重要，合理的设计可以显著提高收敛速度和精度。
+
+未来的研究方向可以包括：
+\begin{itemize}
+    \item 探讨不同步长序列对收敛性的影响；
+    \item 将该方法应用于更复杂的优化问题或实际工程场景中。
+\end{itemize}
+
+\end{document}

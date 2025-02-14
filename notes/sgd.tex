@@ -1,0 +1,541 @@
+\documentclass{article}
+\usepackage{ctex} % 加载 ctex 宏包以支持中文
+\usepackage{amsmath}
+\usepackage{amssymb}
+% 创建一个特定的定理样式和计数器  
+\newtheorem{theorem}{定理}  
+%\newtheorem{example}{例}
+
+\newtheorem{definition}[theorem]{定义} % 定义 'definition' 环境    
+
+\newtheorem{lemma}{引理}  
+\newtheorem{corollary}[theorem]{推论}  
+\newtheorem{proposition}[theorem]{命题}  
+
+\title{一种随机逼近方法\cite{robbins1951stochastic}}  
+\author{Herbert Robbins and Sutton Monro \\
+University of North Carolina}  
+\date{\today}  
+
+\begin{document}  
+\maketitle  
+
+\section{摘要}
+% sec 1
+设 $ M(x) $ 表示在水平 $ x $ 处对某个实验的响应的期望值。假设 $ M(x) $ 是 $ x $ 的单调函数，
+但实验者并不知道它的确切形式，并且希望找到方程 $ M(x) = \alpha $ 的解 $ x = \theta $, 
+其中 $ \alpha $ 是给定的常数。我们给出一种方法，通过在水平 $ x_1, x_2, \cdots $ 进行连续实验，
+使得 $ x_n $ 以概率趋向于 $ \theta $. 
+
+\section{引言}
+% sec 2
+\label{sec::introduction}
+设 $ M(x) $ 是一个给定的函数，$ \alpha $ 是一个给定的常数，使得方程
+
+\begin{equation}
+% eq 1
+\label{eq::root_finding_obj}
+M(x) = \alpha 
+\end{equation}
+有一个唯一的根 $ x = \theta $. 有许多方法可以通过逐次逼近来确定 $ \theta $ 的值。
+对于任何这样的方法，我们首先选择一个或多个初始值 $ x_1, \cdots, x_r $, 
+这些值或多或少是任意的，然后依次获得新的值 $ x_n $ 作为之前获得的值 $ x_1, \cdots, x_{n-1} $, 
+以及 $ M(x_1), \cdots, M(x_{n-1}) $, 可能还包括导数 $ M'(x_1), \cdots, M'(x_{n-1}) $ 等的某些函数。
+如果
+\begin{equation}
+    % eq 2
+    \label{eq::series}
+\lim_{n \to \infty} x_n = \theta, 
+\end{equation}
+无论初始值 $ x_1, \cdots, x_r $ 如何选择，那么该方法对特定函数 $ M(x) $ 和值 $ \alpha $ 是有效的。
+收敛速度（\ref{eq::series}）和计算 $ x_n $ 的难易程度决定了该方法的实际效用。
+
+我们考虑上述问题的一个随机泛化，其中函数 $M(x)$ 的性质对实验者来说是未知的。
+相反，我们假设每个值 $x$ 对应一个随机变量 $Y = Y(x)$, 其分布函数为 $Pr[Y(x) \leq y] = H(y \mid x)$, 使得
+
+\begin{equation}
+    % eq 3
+    \label{eq::expectation}
+    M(x) = \int_{-\infty}^{\infty} y \, dH(y \mid x)
+\end{equation}
+
+是给定 $x$ 时 $Y$ 的期望值。$H(y \mid x)$ 和 $M(x)$ 的确切性质对实验者来说都是未知的，
+但假设方程 (\ref{eq::root_finding_obj}) 有一个唯一的根 $\theta$, 
+并且希望通过在水平 $x_1, x_2, \cdots$ 上进行连续观测来估计 $\theta$, 
+这些水平是根据某种确定的实验程序依次确定的。如果 (\ref{eq::series}) 在概率上对于任意初始值 $x_1, \cdots, x_r$ 都成立，
+我们将按照通常的统计术语，称该程序对于给定的 $H(y \mid x)$ 和值 $\alpha$ 是一致的。
+
+在接下来的部分中，我们将给出一种估计 $\theta$ 的特定程序，该程序在 $H(y \mid x)$ 的性质满足某些限制时是一致的。
+这些限制是严格的，毫无疑问可以大大放宽，但在实践中它们经常被满足，如第 4 节所示。
+我们并不声称所描述的程序具有任何最优性质（即它是``有效的''），但结果至少表明随机逼近的主题可能是有用的，
+并且值得进一步研究。
+
+\section{收敛定理}
+% sec 3
+\label{sec::convergence_theorem}
+
+我们假设对于每一个 $x$, $H(y \mid x)$ 是关于 $y$ 的分布函数，并且存在一个正的常数 $C$ 使得
+\begin{equation}
+    % eq 4
+    \label{eq::bounded}
+    Pr[|Y(x)| \leq C] = \int_{-C}^{C} dH(y \mid x) = 1 \quad \text{对所有 } x.
+\end{equation}
+
+特别地，这意味着对于每一个 $x$, 由 (\ref{eq::expectation}) 定义的期望值 $M(x)$ 存在并且是有限的。
+此外，我们假设存在有限的常数 $\alpha$ 和 $\theta$ 使得
+\begin{equation}
+    % eq 5
+    \label{eq::monotonic}
+    M(x) \leq \alpha \quad \text{当 } x < \theta, \quad M(x) \geq \alpha \quad \text{当 } x > \theta.
+\end{equation}
+
+目前 $M(\theta) = \alpha$ 是否成立并不重要。
+
+令 $\{a_n\}$ 是一个固定的正常数序列，使得
+\begin{equation}
+    % eq 6
+    \label{eq::series_convergence}
+    0 < \sum_{1}^{\infty} a_n^2 = A < \infty.
+\end{equation}
+
+我们定义一个（非平稳的）马尔可夫链 $\{x_n\}$，取 $x_1$ 为任意常数，并定义
+\begin{equation}
+    % eq 7
+    \label{eq::markov_chain}
+    x_{n+1} - x_n = a_n (\alpha - y_n),
+\end{equation}
+其中 $y_n$ 是一个随机变量，满足
+\begin{equation}
+    % eq 8
+    Pr[y_n \leq y \mid x_n] = H(y \mid x_n).
+\end{equation}
+
+令
+\begin{equation}
+    % eq 9
+    b_n = E(x_n - \theta)^2.
+\end{equation}
+
+我们将找到条件，使得
+\begin{equation}
+    % eq 10
+    \label{eq::convergence}
+    \lim_{n \to \infty} b_n = 0
+\end{equation}
+
+无论初始值 $x_1$ 是什么。众所周知，(\ref{eq::convergence}) 意味着 $x_n$ 以概率收敛到 $\theta$.
+
+从 (\ref{eq::markov_chain}) 我们有
+
+\begin{equation}
+    % eq 11
+    \begin{array}{rcl}
+    b_{n+1} &=& E(x_{n+1} - \theta)^2 = E[E[(x_{n+1} - \theta)^2 \mid x_n]] \\
+    &=& E \left[ \int_{-\infty}^{\infty} \{(x_n - \theta) - a_n(y - \alpha)\}^2 dH(y \mid x_n) \right] \\
+    &=& b_n + a_n^2 E \left[ \int_{-\infty}^{\infty} (y - \alpha)^2 dH(y \mid x_n) \right] \\
+    &&- 2a_n E[(x_n - \theta)(M(x_n) - \alpha)].
+    \end{array}
+\end{equation}
+
+设
+\begin{equation}
+    % eq 12
+    d_n = E[(x_n - \theta)(M(x_n) - \alpha)],
+\end{equation}
+
+\begin{equation}
+    % eq 13
+    e_n = E \left[ \int_{-\infty}^{\infty} (y - \alpha)^2 dH(y \mid x_n) \right],
+\end{equation}
+我们可以写为
+\begin{equation}
+    % eq 14
+    \label{eq::recurrence}
+    b_{n + 1} - b_n = a_n^2 e_n - 2a_n d_n.
+\end{equation}
+
+注意，从 (\ref{eq::monotonic})
+$$ 
+    d_n \geq 0, 
+$$
+而从 (\ref{eq::bounded})
+$$
+    0 \leq e_n \leq [C + |\alpha|]^2 < \infty. 
+$$
+结合 (\ref{eq::series_convergence})，这意味着正项级数 $\sum a_n^2 e_n$ 收敛。
+
+对 (\ref{eq::recurrence}) 求和得到
+\begin{equation}
+    % eq 15
+    \label{eq::sum}
+    b_{n+1} = b_1 + \sum_{j=1}^{n} a_j^2 e_j - 2 \sum_{j=1}^{n} a_j d_j.
+\end{equation}
+由于 $b_{n+1} \geq 0$，可以得出
+\begin{equation}
+    % eq 16
+    \sum_{j=1}^{n} a_j d_j \leq \frac{1}{2} \left[ b_1 
+    + \sum_{1}^{\infty} a_n^2 e_n \right] < \infty.
+\end{equation}
+
+因此正项级数
+\begin{equation}
+    % eq 17
+    \label{eq::postive_series}
+    \sum_{1}^{\infty} a_n d_n
+\end{equation}
+收敛。从 (\ref{eq::sum}) 可知
+\begin{equation}
+    % eq 18
+    \lim_{n \to \infty} b_n = b_1 
+    + \sum_{1}^{\infty} a_n^2 e_n - 2 \sum_{1}^{\infty} a_n d_n = b
+\end{equation}
+存在；$b \geq 0$.
+
+现在假设存在一个非负常数序列 $\{k_n\}$, 使得
+\begin{equation}
+    % eq 19
+    \label{eq::condition}
+    d_n \geq k_n b_n, \qquad \sum_{1}^{\infty} a_n k_n = \infty.
+\end{equation}
+
+从 (\ref{eq::condition}) 的第一部分和 (\ref{eq::postive_series}) 的收敛性可知
+\begin{equation}
+    % eq 20
+    \label{eq::upbound}
+    \sum_{1}^{\infty} a_n k_n b_n < \infty.
+\end{equation}
+
+从 (\ref{eq::upbound}) 和 (\ref{eq::condition}) 的第二部分可知，
+对于任何 $\epsilon > 0$, 必须存在无限多个值 $n$ 使得 $b_n < \epsilon$. 
+由于我们已经知道 $b = \lim_{n \to \infty} b_n$ 存在，因此得出 $b = 0$. 
+这样我们就证明了
+
+\begin{lemma}
+    % lemma 1
+如果存在一个非负常数序列 $\{k_n\}$ 满足 (\ref{eq::condition})，则 $b = 0$.    
+\end{lemma}
+
+设
+\begin{equation}
+    % 21
+    A_n = |x_1 - \theta| + [C + |\alpha|](a_1 + a_2 + \cdots + a_{n-1});
+\end{equation}
+则从 (\ref{eq::bounded}) 和 (\ref{eq::markov_chain}) 可知
+\begin{equation}
+    % 22
+    Pr[|x_n - \theta| \leq A_n] = 1.
+\end{equation}
+
+现在设
+\begin{equation}
+    % 23
+    \label{eq::k_n}
+    \bar{k}_n = \inf \left[ \frac{M(x) 
+    - \alpha}{x - \theta} \right] \quad \text{for} \quad 
+    0 < |x - \theta| \leq A_n.
+\end{equation}
+
+从 (\ref{eq::monotonic}) 可知 $\bar{k}_n \geq 0$. 
+此外，记 $P_n(x)$ 为 $x_n$ 的概率分布，则有
+\begin{equation}
+    % eq 24
+    \begin{array}{rcl}
+    d_n &=& \int_{|x-\theta| \leq A_n} (x - \theta)(M(x) - \alpha) \, dP_n(x) \\
+        &\geq& \int_{|x-\theta| \leq A_n} \bar{k}_n |x - \theta|^2 \, dP_n(x) \\
+        &=& \bar{k}_n b_n.
+    \end{array}
+\end{equation}
+
+由此可知，由 (\ref{eq::k_n}) 定义的特定序列 $\{\bar{k}_n\}$ 满足 (\ref{eq::condition}) 
+的第一部分。
+
+为了建立 (\ref{eq::condition}) 的第二部分，我们将做出以下假设：
+\begin{equation}
+    % eq 25
+    \label{eq::series_inequality}
+    \bar{k}_n \geq \frac{K}{A_n}
+\end{equation}
+
+对于某个常数 $K > 0$ 和足够大的 $n$, 以及
+\begin{equation}
+    % eq 26
+    \label{eq::series_infinite}
+    \sum_{n=2}^{\infty} \frac{a_n}{(a_1 + \cdots + a_{n-1})} = \infty.
+\end{equation}
+
+从 (\ref{eq::series_infinite}) 可知
+\begin{equation}
+    % eq 27
+    \sum_{1}^{\infty} a_n = \infty,
+\end{equation}
+因此对于足够大的 $n$
+\begin{equation}
+    % eq 28
+    2[C + |\alpha|](a_1 + \cdots + a_{n-1}) \geq A_n.
+\end{equation}
+
+这表明由 (\ref{eq::series_inequality}) 可知，对于足够大的 $n$
+\begin{equation}
+    % eq 29
+    \label{eq::inequality}
+    a_n \bar{k}_n \geq a_n \frac{K}{A_n} 
+    \geq 2[C + |\alpha|](a_1 + \cdots + a_{n-1}),
+\end{equation}
+(\ref{eq::condition}) 的第二部分由 (\ref{eq::inequality}) 
+和 (\ref{eq::series_infinite}) 得到。这证明了
+
+\begin{lemma}
+    % lemma 2
+    \label{lemma::condition}
+如果 (\ref{eq::series_inequality}) 和 (\ref{eq::series_infinite}) 成立，则 $b = 0$.
+\end{lemma}
+
+假设 (\ref{eq::series_convergence}) 和 (\ref{eq::series_infinite}) 
+关于 $\{a_n\}$ 的条件由序列 $a_n = 1/n$ 满足，因为
+$$
+\sum_{1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6},
+$$
+$$
+\sum_{n=2}^{\infty} \left[ \frac{1}{n \left( 1 + \frac{1}{2} + \cdots + \frac{1}{n-1} \right)} \right] = \infty.
+$$
+更一般地，任何序列 $\{a_n\}$ 如果存在两个正的常数 $c'$ 和 $c''$ 使得
+\begin{equation}
+    % eq 30
+    \label{eq::series_1_n}
+    \frac{c'}{n} \leq a_n \leq \frac{c''}{n}
+\end{equation}
+则满足 (\ref{eq::series_convergence}) 和 (\ref{eq::series_infinite})。
+我们将称任何满足 (\ref{eq::series_convergence}) 和 (\ref{eq::series_infinite}) 
+的序列 $\{a_n\}$, 无论是否具有形式 (\ref{eq::series_1_n})，为类型 $1/n$ 的序列。
+
+如果 $\{a_n\}$ 是类型 $1/n$ 的序列，则很容易找到满足 (\ref{eq::monotonic}) 
+和 (\ref{eq::series_inequality}) 的函数 $M(x)$. 例如，
+假设 $M(x)$ 满足以下加强形式的 (\ref{eq::monotonic})：对于某个 $\delta > 0$, 
+\begin{equation}
+    % eq 5'
+    \label{eq::monotonic_strong}
+M(x) \leq \alpha - \delta \quad \text{当 } x < \theta, 
+\quad M(x) \geq \alpha + \delta \quad \text{当 } x > \theta. \tag{5'}
+\end{equation}
+
+对于 $0 < |x - \theta| \leq A_n$, 我们有
+\begin{equation}
+    % eq 31
+    \frac{M(x) - \alpha}{x - \theta} \geq \frac{\delta}{A_n},
+\end{equation}
+
+因此
+\begin{equation}
+    % eq 32
+    \bar{k}_n \geq \frac{\delta}{A_n},
+\end{equation}
+这是 (\ref{eq::series_inequality}) 中的 $K = \delta$. 从引理 \ref{lemma::condition} 
+可以得出
+
+\begin{theorem}
+% thm 1
+\label{thm::main_1}
+如果 $\{a_n\}$ 是类型 $1/n$ 的序列，如果 (\ref{eq::bounded}) 成立，
+并且如果 $M(x)$ 满足 $(\ref{eq::monotonic_strong})$，则 $b = 0$.
+\end{theorem}
+
+一个更有趣的情况发生在 $M(x)$ 满足以下条件时：
+\begin{equation}
+    % eq 33
+    \label{eq::monotonic_condition}
+    M(x) \text{ 是非递减的},
+\end{equation}
+\begin{equation}
+    % eq 34
+    \label{eq::monotonic_constant}
+    M(\theta) = \alpha,
+\end{equation}
+\begin{equation}
+    % eq 35
+    \label{eq::monotonic_derivative}
+    M'(\theta) > 0.
+\end{equation}
+我们将证明 (\ref{eq::series_inequality}) 在这种情况下也成立。
+从 (\ref{eq::monotonic_derivative}) 可知
+\begin{equation}
+    % eq 36
+    M(x) - \alpha = (x - \theta)[M'(\theta) + \epsilon(x - \theta)],
+\end{equation}
+其中 $\epsilon(t)$ 是一个函数，使得
+\begin{equation}
+    % eq 37
+    \lim_{t \to 0} \epsilon(t) = 0.
+\end{equation}
+
+因此存在一个常数 $\delta > 0$, 使得
+\begin{equation}
+    % eq 38
+    \epsilon(t) \geq -\frac{1}{2} M'(\theta) \quad \text{for} \quad |t| \leq \delta,
+\end{equation}
+因此有
+\begin{equation}
+    % eq 39
+    \frac{M(x) - \alpha}{x - \theta} \geq \frac{1}{2} M'(\theta) > 0 
+    \quad \text{对} \quad |x - \theta| \leq \delta.
+\end{equation}
+因此，对于 $\theta + \delta \leq x \leq \theta + A_n$, 由于 $M(x)$ 是非递减的，
+\begin{equation}
+    % eq 40
+    \frac{M(x) - \alpha}{x - \theta} \geq \frac{M(\theta + \delta) - \alpha}{A_n} \geq \frac{\delta M'(\theta)}{2 A_n},
+\end{equation}
+而对于 $\theta - A_n \leq x \leq \theta - \delta$,
+\begin{equation}
+    % eq 41
+    \frac{M(x) - \alpha}{x - \theta} 
+    = \frac{\alpha - M(x)}{\theta - x} 
+    \geq \frac{\alpha - M(\theta - \delta)}{A_n} 
+    \geq \frac{\delta M'(\theta)}{2 A_n}.
+\end{equation}
+
+因此，不失一般性地假设 $\delta / A_n \leq 1$,
+\begin{equation}
+    % eq 42
+    \frac{M(x) - \alpha}{x - \theta} \geq \frac{\delta M'(\theta)}{2 A_n} 
+    \quad \text{对} \quad 0 < |x - \theta| \leq A_n,
+\end{equation}
+因此 (\ref{eq::series_inequality}) 成立，其中 $K = \delta M'(\theta) / 2 > 0$. 
+这证明了
+
+\begin{theorem}
+    % thm 2
+    \label{thm::main_2}
+如果 $\{a_n\}$ 是类型 $1/n$ 的序列，如果 (\ref{eq::bounded}) 成立，
+并且如果 $M(x)$ 满足 (\ref{eq::monotonic_condition})，
+(\ref{eq::monotonic_constant})，和 (\ref{eq::monotonic_derivative})，
+则 $b = 0$.    
+\end{theorem}
+很明显，条件 (\ref{eq::bounded}) 可以在不影响定理 \ref{thm::main_1} 和 \ref{thm::main_2} 
+的有效性的情况下被大大削弱。一个合理的替代条件是
+\begin{equation}
+    % eq 4'
+    \label{eq::bounded_1}
+    |M(x)| \leq C, \quad \int_{-\infty}^{\infty} (y - M(x))^2 dH(y \mid x) 
+    \leq \sigma^2 < \infty \quad \text{for all } x. \tag{4'}
+\end{equation}
+
+我们不知道定理 \ref{thm::main_1} 和 \ref{thm::main_2} 是否在 (\ref{eq::bounded}) 
+被替换为 (\ref{eq::bounded_1}) 时仍然成立。同样，定理 \ref{thm::main_2} 中的假设
+(\ref{eq::monotonic_condition})，
+(\ref{eq::monotonic_constant})，和 (\ref{eq::monotonic_derivative}) 也可以被稍微削弱，
+可能被替换为
+\begin{equation}
+    % eq 5''
+    M(x) < \alpha \quad \text{for} \quad x < \theta, 
+    \quad M(x) > \alpha \quad \text{for} \quad x > \theta. \tag{5''}
+\end{equation}
+
+\section{使用响应和非响应数据估计分位数}
+% sec 4
+\label{sec::response}
+
+设 $F(x)$ 是一个未知的分布函数，使得
+
+\begin{equation}
+    % eq 43
+    F(\theta) = \alpha \quad (0 < \alpha < 1), \quad F'(\theta) > 0,
+\end{equation}
+并且设 $\{z_n\}$ 是一个独立随机变量序列，
+每个随机变量的分布函数为 $Pr[z_n \leq x] = F(x)$. 
+基于 $\{z_n\}$ 我们希望估计 $\theta$. 然而，在实践中（如生物测定、敏感性数据），
+我们不允许知道 $z_n$ 的值本身。相反，我们可以自由地为每个 $n$ 指定一个值 $x_n$, 
+然后只给出值 $\{y_n\}$, 其中
+\begin{equation}
+    % eq 44
+    \label{eq::response}
+    y_n = 
+    \begin{cases}
+        1 & \text{if } z_n \leq x_n \quad \text{(``响应'')}, \\
+        0 & \text{otherwise} \quad \text{(``非响应'')}.
+    \end{cases}
+\end{equation}
+
+我们如何选择值 $\{x_n\}$ 并如何使用序列 $\{y_n\}$ 来估计 $\theta$?
+
+让我们按照以下步骤进行。选择 $x_1$ 作为我们对值 $\theta$ 的最佳猜测，
+并让 $\{a_n\}$ 是任何类型为 $1/n$ 的常数序列。
+然后根据规则依次选择值 $x_2, x_3, \cdots$
+\begin{equation}
+    % eq 45
+    x_{n+1} - x_n = a_n (\alpha - y_n).
+\end{equation}
+由于
+\begin{equation}
+    % eq 46
+    Pr[y_n = 1 \mid x_n] = F(x_n), \quad Pr[y_n = 0 \mid x_n] = 1 - F(x_n),
+\end{equation}
+因此 (\ref{eq::bounded}) 成立，并且有
+\begin{equation}
+    % eq 47
+    M(x) = F(x).
+\end{equation}
+
+定理 \ref{thm::main_2} 中的所有假设都满足，因此
+\begin{equation}
+    % eq 48
+    \label{eq::convergence_theta}
+    \lim_{n \to \infty} x_n = \theta
+\end{equation}
+在均方意义下成立，从而在概率意义上也成立。换句话说，$\{x_n\}$ 是 $\theta$ 的一致估计量。
+
+序列 $\{x_n\}$ 的效率将取决于 $x_1$ 和序列 $\{a_n\}$ 的选择，以及 $F(x)$ 的性质。
+对于任何给定的 $F(x)$, 无疑存在比类型为 $\{x_n\}$ 更有效的 $\theta$ 的估计量，
+但 $\{x_n\}$ 具有分布自由的优势。
+
+在某些应用中，在进入下一级之前在同一级别进行一组 $r$ 次观测更为方便。
+第 $n$ 组观测将是
+\begin{equation}
+    % eq 49
+    \label{eq::group}
+    y_{(n-1)r+1}, \cdots, y_{nr},
+\end{equation}
+使用符号 (\ref{eq::response})。令 $\bar{y}_n$ 为值 (\ref{eq::group}) 的算术平均。
+然后设置
+\begin{equation}
+    % eq 50
+    x_{n+1} - x_n = a_n (\alpha - \bar{y}_n),
+\end{equation}
+我们有 $M(x) = F(x)$ 如前所述，因此 (\ref{eq::convergence_theta}) 仍然成立。
+
+在这个问题中使用收敛的序列过程的可能性首先由 T. W. Anderson, P. J. McCarthy 
+和 J. W. Tukey 在《海军军械报告》No. 65-46（1946）第 99 页提到。
+ 
+\section{一个更一般的回归问题}
+% sec 5
+
+很明显，第 \ref{sec::response} 节中的问题是更一般回归问题的一个特例。
+实际上，使用第 \ref{sec::introduction} 节中的符号，
+考虑任何与可观测值 $x$ 相关联的随机变量 $Y$, 使得固定 $x$ 时 $Y$ 的条件分布函数为 
+$H(y \mid x)$; 那么函数 $M(x)$ 就是 $Y$ 对 $x$ 的回归。
+
+通常的回归分析假设 $M(x)$ 是已知形式但带有未知参数的形式，例如
+\begin{equation}
+    % eq 51
+    M(x) = \beta_0 + \beta_1 x,
+\end{equation}
+并基于观测值 $y_1, y_2, \cdots, y_n$ 对应于观测值 $x_1, x_2, \cdots, x_n$ 
+来估计参数 $\beta_i$ 中的一个或两个。例如，最小二乘法得到的估计量 $b_i$ 使得表达式
+\begin{equation}
+    % eq 52
+    \sum_{i=1}^{n} (y_i - [\beta_0 + \beta_1 x_i])^2
+\end{equation}
+最小化。
+
+与其假设 $M(x)$ 是 $x$ 的线性函数来估计参数 $\beta_i$, 
+我们也可以尝试估计使得 $M(\theta) = \alpha$ 的值 $\theta$, 
+其中 $\alpha$ 是给定的，而不对 $M(x)$ 的形式做任何假设。
+如果我们仅假设 $H(y \mid x)$ 满足定理 \ref{thm::main_2} 的假设，
+则由 (\ref{eq::markov_chain}) 定义的 $\theta$ 的估计量序列 $\{x_n\}$ 至少是一致的。
+这表明，在回归问题中，从实际应用的角度来看，值得研究像 (\ref{eq::markov_chain}) 
+这样的分布自由的顺序观测系统。
+
+我们中的一人正在作为研究生研究这种和其他顺序设计的性质；
+资深作者负责第 \ref{sec::convergence_theorem} 节中的收敛证明。
+
+\bibliography{mathsoft.bib}
+\bibliographystyle{plain}
+\end{document}

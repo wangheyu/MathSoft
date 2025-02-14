@@ -1,0 +1,13 @@
+.gitignore
+*.aux
+*.log
+*.pdf
+*.gz
+*.bbl
+Programming
+*.blg
+doc
+*.xdv
+*.ipynb_checkpoints
+*.fls
+*.fdb_latexmk
