@@ -4,10 +4,19 @@
 *.pdf
 *.gz
 *.bbl
-Programming
 *.blg
-doc
 *.xdv
 *.ipynb_checkpoints
 *.fls
 *.fdb_latexmk
+*.nav
+*.snm
+*.out
+*.toc
+*.mx1
+
+# c/c++
+*.out
+*.o
+*.so
+*.a

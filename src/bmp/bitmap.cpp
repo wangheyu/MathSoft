@@ -2,6 +2,7 @@
 #include <fstream>
 #include "bitmap.h"
 
+
 void build_bmp(std::string _file,
 			   int _w,
 			   int _h,

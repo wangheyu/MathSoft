@@ -1,0 +1,17 @@
+\documentclass{article}
+\usepackage{musixtex} % 引入 musixtex 宏包
+
+\begin{document}
+
+% 开始五线谱环境
+\begin{music}
+    \instrumentnumber{1} % 定义一个乐器
+    \setstaffs{1}{1}     % 设置五线谱数量（1个乐器，1条五线）
+    \startpiece          % 开始乐谱
+    \notes               % 开始输入音符
+        \qu{cdef}        % 输入四分音符 C D E F
+    \enotes              % 结束音符输入
+    \endpiece           % 结束乐谱
+\end{music}
+
+\end{document}

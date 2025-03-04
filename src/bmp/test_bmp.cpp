@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 		{
 			int pos = j * width + i;
 			cache[pos * 3] = 0;
-			cache[pos * 3 + 1] = 0;
+			cache[pos * 3 + 1] = 255;
 			cache[pos * 3 + 2] = 255;
 		}
 	build_bmp("test.bmp", width, height, cache);
