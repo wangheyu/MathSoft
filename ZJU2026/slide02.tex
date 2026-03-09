@@ -1,0 +1,147 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+% =========================================================
+% Academy-style Beamer template (clean + formal)
+% Course: 人工智能与数学软件
+% =========================================================
+
+% ---------- Fonts & Language ----------
+\usepackage[UTF8]{ctex} % Chinese support (XeLaTeX)
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Heros Cn} % serif-like academic look (safe default)
+\setsansfont{WenQuanYi Zen Hei Mono}
+\setmonofont{WenQuanYi Zen Hei Mono}
+
+% ---------- Math ----------
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+
+% ---------- Figures / Tables ----------
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+% ---------- Links ----------
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=.,
+  urlcolor=.,
+  citecolor=.
+}
+
+% ---------- Beamer Theme (Academy vibe) ----------
+\usetheme{Madrid}
+\usecolortheme{dolphin}
+\usefonttheme{professionalfonts}
+
+% ---------- Tight, clean layout ----------
+\setbeamersize{text margin left=10mm,text margin right=10mm}
+\setlength{\parskip}{4pt}
+
+% ---------- Footer / Header ----------
+\setbeamertemplate{navigation symbols}{}
+
+% Footline: short title | section | slide number
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.38\paperwidth,ht=2.4ex,dp=1.0ex,leftskip=1.2ex]{author in head/foot}
+      \usebeamerfont{author in head/foot}\insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.44\paperwidth,ht=2.4ex,dp=1.0ex,center]{title in head/foot}
+      \usebeamerfont{title in head/foot}\insertsectionhead
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.18\paperwidth,ht=2.4ex,dp=1.0ex,rightskip=1.2ex,right]{date in head/foot}
+      \usebeamerfont{date in head/foot}\insertframenumber/\inserttotalframenumber
+    \end{beamercolorbox}%
+  }%
+  \vskip0pt%
+}
+
+% Optional: subtle headline with section navigation
+\setbeamertemplate{headline}{
+  \begin{beamercolorbox}[ht=2.2ex,dp=0.8ex,leftskip=1.2ex,rightskip=1.2ex]{section in head/foot}
+    \usebeamerfont{section in head/foot}\insertsectionnavigationhorizontal{\paperwidth}{}{}
+  \end{beamercolorbox}
+}
+
+% ---------- Block style ----------
+\setbeamertemplate{blocks}[rounded][shadow=true]
+
+% ---------- Title info ----------
+\title[人工智能与数学软件]{\Large 人工智能与数学软件\\\small 用计算机工具学习数学}
+\subtitle{第1周：课程内容工具准备}
+\author{王何宇 \\ wangheyu@zju.edu.cn, 13456940632}
+\institute{浙江大学数学科学学院}
+\date{2026年3月3日}
+
+
+% =========================================================
+\begin{document}
+
+% =========================================================
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+\section{课程简介}
+% =========================================================
+\begin{frame}{课程简介}
+\begin{itemize}
+  \item 课程名称：《人工智能与数学软件》
+  \item 核心内容：必须掌握的\textbf{技能}、交流使用 AI 的\textbf{经验}和使用 AI 对数学进行\textbf{探索}
+  \item 课程组织形式（每周）：2小时课堂讲授
+  \item 为数学院同学定制（企图替代人工智能基础课），非专业同学慎选！
+\end{itemize}
+\begin{block}{考核方式}
+\begin{itemize}
+  \item \textbf{无期末考试}
+  \item 课程报告（期末提交）：一份结构化、可复现的学习/实验报告
+  \item 平时环节：作业、小测（线上/线下）、（期中）项目作业、课堂参与
+\end{itemize}
+\end{block}
+\end{frame}
+
+\section{人工智能对数学的影响}
+
+\begin{frame}{人工智能的非线性快速发展}
+\begin{itemize}
+    \item 课程演化：从数学软件到人工智能
+    \item GPT 3.5 第一次和公众接触是 2022 年 11 月 30 日
+    \item 此后各种大语言模型不但越来越丰富，而且更新周期越来越短
+    \item 数学方面：从 1+1 都做不对，到目前数学院硕士研究生水平，\newline
+    个别领域达到博士
+    \item 那么数学家会不会被取代呢？
+    \item<2-> 未来不会使用 AI 的数学家会非常罕见（尽管也许不是完全没有）
+\end{itemize}
+\end{frame}
+
+\begin{frame}{准备好你的 AI 工具}
+    \begin{itemize}
+        \item 免费工具：deepseek, kimi，qianwen，AI 校园(chat.zju.edu.cn)
+        \item 收费工具：askmanyai.cn
+        \item 注意事项：仔细看一下用户协定（换个AI看），明确知识权归属。不要上传涉密材料。
+        \item 暂时掌握网页端使用就可以。
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{一个完全受自己控制的计算环境}
+\begin{itemize}
+    \item 推荐：Windows + wsl + debian
+    \item 必要的工作环境：python(anaconda) + xelatex(texlive-full) + git
+    \item 介绍 overleaf，但本地 latex 不可少 (overleaf.zju)
+    \item 需要一个编译器，推荐 vs code，装在主机而不是虚拟机中
+    \item 代码托管：zju.git，课程网站
+\end{itemize}
+\end{frame}
+
+\begin{frame}{用 AI 学习数学}
+  \begin{itemize}
+    \item 校准上下文环境，上传电子资料
+    \item 翻译、解释、讨论、举例、反驳
+    \item 复习规划
+    \item 具体问题举例：定积分的概念
+  \end{itemize}
+\end{frame}
+
+\end{document}
