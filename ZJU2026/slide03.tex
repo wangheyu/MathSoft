@@ -1,0 +1,268 @@
+\documentclass[aspectratio=169,UTF8,11pt]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{LaTeX 使用入门}
+\author{Crazyfish 和他的AI们}
+\institute{浙江大学数学科学学院}
+\date{\today}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{基本原则：内容与格式分离，结构先于外观}
+\begin{itemize}
+  \item 科技文献包含社区约定的格式，数学论文在这方面尤其严谨。
+    \begin{itemize}
+        \item 公式、定理、证明、参考文献、标题
+        \item 专著、特定的杂志和会议
+        \item 图片和表格
+    \end{itemize}
+  \item{科技文不是文字符号的堆砌，而是有着内在结构}
+    \begin{itemize}
+        \item 文档类型：书、论文、报告、海报、等等
+        \item 文档内部结构：标题、摘要、章节、正文、标注、参考文献、等等
+        \item 数学论文的特殊结构：定理、定义、证明、算法、等等
+        \item 数学公式
+        \item 图形和表格
+    \end{itemize}
+  \item 原则：对文档各部分文字赋予结构，格式绑定结构，而不是具体的内容
+  \item 原则：当你不清楚应该用什么格式时，就使用默认的格式
+\end{itemize}
+\end{frame}
+
+\begin{frame}{演示：局部化格式和结构化格式}
+\begin{itemize}
+    \item 这里有两个 latex 文件，从编译结果看，几乎一样
+    \item 但它们格式化的方式完全相反：一个完全依赖局部格式化；另一个只提供了结构
+    \item 一旦发生任何调整，局部格式化必须手工修改每一个细节，
+    而通过结构赋予的格式可以通过导言和文档设置统一调整
+    \item 同时我们也观察一下最简单的 latex 文档具备的整体结构：导言、标题、正文
+    \item 这里只有结构化文档是值得推荐的，任何局部化的格式调整都应该尽量避免
+\end{itemize}    
+\end{frame}
+
+\begin{frame}[fragile]{导言区：文档的全局设置区}
+\begin{itemize}
+  \item LaTeX 文档通常分为两部分：
+  \begin{itemize}
+    \item 导言区：\verb|\documentclass| 到 \verb|\begin{document}| 之间
+    \item 正文区：\verb|\begin{document}| 到 \verb|\end{document}| 之间
+  \end{itemize}
+
+  \item 导言区的主要作用：
+  \begin{itemize}
+    \item 选择文档类型：文章、报告、幻灯片等
+    \item 加载宏包提供额外功能：数学公式、表格、图片、超链接等功能
+    \item 进行全局设置：标题格式、页面大小、行距、定理环境、计数器等等
+    \item 自定义命令：如希望积分号总是正体，数域总是双体大写，向量总是黑体等等
+    \item 一个常见的数学文档的示例
+    \item 所以我们看到这些常见的格式配置，都应该通过结构绑定，而不是局部调整
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{文档的局部结构：环境（environment）}
+\begin{itemize}
+  \item 在 LaTeX 中，除了文档本身的结构，如章节、摘要等等，
+  我们用环境来定义“成块出现”的内容。
+  \item 环境以 \verb|\begin| 和 \verb|\end| 作为开始和结束
+  \item 可以把环境理解为：
+  \begin{itemize}
+    \item 一段具有明确功能的内容区域
+    \item 一种带有特定排版规则的结构
+    \item 一种“告诉 LaTeX 这部分内容是什么”的方式
+  \end{itemize}
+  \item 常见例子：列表(itemize, enumerate)、公式(equation)、图(figure)、表(table)、
+  定理(theorem)、证明(proof)等等
+  \item 不同的环境可以赋予不同的定制格式
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{什么是数学模式？}
+\begin{itemize}
+  \item 在 \LaTeX 中，数学内容通常不能直接按普通文本输入，
+  而需要进入\alert{数学模式}（math mode）。
+\item 数学模式中数学公式以行命令的形式展现，在安装了适当的工具和文档以后，
+可以方便地查询
+  \item 两种最常见的数学模式：
+  \begin{itemize}
+    \item 行内公式：\texttt{\$...\$}，例如 \verb|$a^2+b^2=c^2$|
+    \item 行间公式：\texttt{\textbackslash[...\textbackslash]} 
+    或 \verb|$$ ... $$| 或 \texttt{equation} 环境
+  \end{itemize}
+  \item 基本原则：数学对象和文字对象应该在语义级别严格区分
+  \item 比如 “今年是2026年”，这里的 2026 应该是文字；
+  而 “请估算 10 年内的总产量” 这个 $10$ 就可以用 \verb|$| 括起来 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{交叉引用与计数器}
+\begin{itemize}
+  \item LaTeX 会为许多对象自动编号，例如：章节（\texttt{section}）、
+  公式（\texttt{equation}）、定理、引理、定义、图和表
+  \item 这些编号通常由对应的\alert{计数器}（counter）管理。
+  \begin{itemize}
+    \item 例如：节号递增，公式号递增，定理号递增
+    \item 计数器之间还可以绑定，例如公式按节编号
+  \end{itemize}
+  \item 交叉引用的基本做法：
+  \begin{itemize}
+    \item 用 \texttt{\textbackslash label\{...\}} 给对象做标签
+    \item 用 \texttt{\textbackslash ref\{...\}} 引用编号
+  \end{itemize}
+  \item 基本原则：
+  \begin{itemize}
+    \item 尽量不要手写“第 2 节”“公式 (3)”之类的编号
+    \item 编号交给计数器管理，引用交给 \texttt{label/ref}
+    \item 文档修改后，交叉引用会自动更新，但需要编译两遍
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{图与表：环境、标题与浮动管理}
+\begin{itemize}
+  \item 在 LaTeX 中，图片和表格通常放在专门的环境中：\texttt{figure}：图片环境、
+  \texttt{table}：表格环境
+  \item 这两个环境的常见作用：
+  \begin{itemize}
+    \item 为图表自动编号
+    \item 配合 \texttt{\textbackslash caption} 生成标题
+    \item 配合 \texttt{\textbackslash label} 进行交叉引用
+    \item 交给 \LaTeX 自动安排版面位置
+  \end{itemize}
+  \item \texttt{\textbackslash caption\{...\}} 用来给图表添加标题；
+  \texttt{\textbackslash label\{...\}} 用来生成可引用的标签。
+  \item 浮动管理的含义：
+  \begin{itemize}
+    \item 图表不一定严格出现在源码所在位置
+    \item LaTeX 会根据页面空间自动安排更合适的位置
+    \item \texttt{[htbp]} 表示“这里、页顶、页底、浮动页”都是可接受的位置
+  \end{itemize}
+  \item 基本原则：
+  \begin{itemize}
+    \item 图表尽量放在 \texttt{figure}/\texttt{table} 环境中
+    \item 重要图表应加 \texttt{caption} 和 \texttt{label}
+    \item 不必强求图表一定出现在源码的正下方
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{表格的基本制作方法}
+\begin{itemize}
+  \item LaTeX 中最基本的表格通常使用 \texttt{tabular} 环境：
+\begin{verbatim}
+\begin{tabular}{cc}
+  a_{11} & a_{12} \\
+  a_{21} & a_{22}
+\end{tabular}
+\end{verbatim}
+  \item 其中：
+  \begin{itemize}
+    \item 花括号中的 \texttt{c}、\texttt{l}、\texttt{r} 分别表示居中、左对齐、右对齐
+    \item \texttt{\&} 用来分隔列
+    \item \texttt{\textbackslash\textbackslash} 用来结束一行
+    \item \texttt{\textbackslash hline} 可以画横线
+  \end{itemize}
+
+  \item 基本原则：
+  \begin{itemize}
+    \item 数据区域用 \texttt{tabular}
+    \item 编号、标题、浮动管理用 \texttt{table}
+    \item 简单表格先学会列格式、对齐、横线和引用
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{数学文档中最常见的基础宏包}
+\begin{itemize}
+  \item 数学作业、课程报告和初步论文写作中，常见且最基础的宏包包括：
+
+  \begin{itemize}
+    \item \texttt{amsmath}：提供更强的数学公式环境，如 \texttt{equation}、\texttt{align}
+    \item \texttt{amssymb}：提供常用数学符号，如 \verb|\mathbb{R}|、\verb|\forall|、\verb|\exists|
+    \item \texttt{amsthm}：定义定理、引理、定义、证明等环境
+    \item \texttt{graphicx}：插入图片
+    \item \texttt{hyperref}：生成超链接，增强交叉引用
+    \item \texttt{geometry}：设置页面大小与页边距
+    \item \texttt{ctex}：支持中文文档
+  \end{itemize}
+  \item 初学阶段的建议：
+  \begin{itemize}
+    \item 先掌握少量最常用宏包
+    \item 先学会“够用”的配置，再逐步扩展
+    \item 不必一开始就在导言区堆很多宏包
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{TikZ：在 LaTeX 中直接绘图}
+\begin{itemize}
+  \item TikZ 是 LaTeX 中常用的绘图工具，适合制作：
+  \begin{itemize}
+    \item 坐标系与函数图像
+    \item 几何示意图
+    \item 箭头、流程图、交换图
+    \item 简单的数学插图
+  \end{itemize}
+
+  \item 基本使用方法：
+\begin{verbatim}
+\usepackage{tikz}
+\end{verbatim}
+
+  \item 一般在正文中使用 \texttt{tikzpicture} 环境：
+\begin{verbatim}
+\begin{tikzpicture}
+  ...
+\end{tikzpicture}
+\end{verbatim}
+
+  \item 学习建议：
+  \begin{itemize}
+    \item 入门阶段只需了解它能做什么
+    \item 充分利用网络资源：https://texample.net/
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{BibTeX：用数据库管理参考文献}
+\begin{itemize}
+  \item 参考文献放在单独的 \texttt{.bib} 文件中统一管理。
+  \item 基本思路：
+  \begin{itemize}
+    \item 在正文中用 \texttt{\textbackslash cite\{...\}} 引用文献
+    \item 在 \texttt{.bib} 文件中保存文献信息
+    \item 编译时由 BibTeX 自动生成参考文献列表
+  \end{itemize}
+  \item 例如，正文中可以写：
+\begin{verbatim}
+经典教材可参考 \cite{rudin1976principles}。
+\end{verbatim}
+  \item 在文档末尾写：
+\begin{verbatim}
+\bibliographystyle{plain}
+\bibliography{refs}
+\end{verbatim}
+  \item 基本优点：
+  \begin{itemize}
+    \item 参考文献集中管理，不必手工排版每一条
+    \item 同一条文献可在多处重复引用
+    \item 修改文献格式时更方便统一处理
+    \item 配合搜索引擎使用，注意 AI 胡编文献
+  \end{itemize}
+\end{itemize}
+\end{frame}
+\end{document}
