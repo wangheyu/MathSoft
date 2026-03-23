@@ -1,0 +1,82 @@
+\documentclass[aspectratio=169,UTF8,11pt]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\title{Bibtex 使用入门}
+\author{Crazyfish}
+\institute{ZJU MATH}
+\date
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{为什么需要 BibTeX？}
+
+\begin{itemize}
+  \item \textbf{参考文献在学术写作中的作用}
+  \begin{itemize}
+    \item 标明结论、方法和数据的来源
+    \item 体现学术规范，避免“无出处引用”
+    \item 方便读者追溯相关文献与背景材料
+  \end{itemize}
+
+  \vspace{0.5em}
+  \item \textbf{手工写参考文献的常见问题}
+  \begin{itemize}
+    \item 编号容易混乱
+    \item 调整顺序时修改麻烦
+    \item 同一文献多次引用不方便维护
+    \item 不同条目的格式难以保持统一
+  \end{itemize}
+
+  \vspace{0.5em}
+  \item \textbf{BibTeX 的优势}
+  \begin{itemize}
+    \item 自动编号
+    \item 自动排序
+    \item 自动统一参考文献格式
+    \item 便于复用、修改与长期维护
+  \end{itemize}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]{BibTeX 工作流程总览}
+
+\begin{itemize}
+  \item \textbf{BibTeX 的基本工作链条}
+  \begin{itemize}
+    \item 在 \texttt{.bib} 文件中保存文献信息
+    \item 在正文中使用 \verb|\cite{...}| 进行引用
+    \item 在文末加入参考文献命令
+    \item 编译时运行 xelatex 与 bibtex
+    \item 自动生成参考文献列表
+  \end{itemize}
+\end{itemize}
+
+\vspace{0.8em}
+
+\begin{center}
+\texttt{正文写 \textbackslash cite\{key\}}\\[0.4em]
+$\downarrow$\\[0.4em]
+BibTeX 读取 \texttt{refs.bib}\\[0.4em]
+$\downarrow$\\[0.4em]
+按 \texttt{.bst} 样式生成文献表\\[0.4em]
+$\downarrow$\\[0.4em]
+LaTeX 在文中显示编号或作者--年份
+\end{center}
+
+\end{frame}
+
+\end{document}
