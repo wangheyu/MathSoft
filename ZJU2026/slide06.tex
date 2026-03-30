@@ -1,0 +1,1189 @@
+\documentclass[aspectratio=169]{beamer}
+
+% ===== Theme =====
+\usetheme{Madrid}
+\usecolortheme{default}
+
+% ===== Packages =====
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% ===== Listings setup =====
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codekw}{RGB}{0,0,150}
+\definecolor{codestr}{RGB}{163,21,21}
+\definecolor{codecom}{RGB}{0,128,0}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom},
+  showstringspaces=false,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible
+}
+
+% ===== Title info =====
+\title{从 Shell 认识 Linux 系统结构}
+%\subtitle{基于 WSL2 + Debian 的两次课讲义}
+\author{《人工智能与数学软件》课程}
+\date{\today}
+
+\begin{document}
+
+% ------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{本章内容}
+\begin{itemize}
+  \item 本章从 \alert{Shell} 出发，理解 Linux 系统的基本结构。
+  \item 实际操作环境：\alert{Windows + WSL2 + Debian}。
+  \item 目标不是记忆大量命令，而是建立“\alert{如何通过命令行观察系统}”的观念。
+\end{itemize}
+
+\vspace{0.5em}
+核心问题：
+\begin{enumerate}
+  \item Shell 是什么？
+  \item Linux 系统由哪些部分组成？
+  \item 如何通过基本命令理解文件、用户、权限、进程与维护？
+  \item \alert{我们该如何控制计算机。}
+\end{enumerate}
+\end{frame}
+
+% ------------------------------------------------
+% \begin{frame}{两次课安排}
+% \textbf{第 1 次课：从 Shell 进入 Linux}
+% \begin{itemize}
+%   \item WSL2 与 Debian 环境说明
+%   \item Linux 的基本结构：用户、Shell、内核、文件系统
+%   \item 路径、目录与基本命令
+%   \item 用命令观察系统
+% \end{itemize}
+
+% \vspace{0.8em}
+% \textbf{第 2 次课：从文件、权限、进程到系统维护}
+% \begin{itemize}
+%   \item Linux 重要目录与关键文件
+%   \item 用户、权限、进程、服务
+%   \item 日志、软件安装与系统维护
+%   \item 若干典型案例
+% \end{itemize}
+% \end{frame}
+
+% ============================================================
+\section{从 Shell 进入 Linux}
+
+% ------------------------------------------------
+\begin{frame}{初级目标}
+希望大家首先能够：
+\begin{itemize}
+  \item 理解 WSL2 + Debian 中 Shell 的作用；
+  \item 知道 Linux 的基本层次：用户、Shell、内核、硬件；
+  \item 理解 Linux 文件系统的树形结构；
+  \item 熟悉最基础的命令：\texttt{pwd, ls, cd, mkdir, touch, cp, mv, rm, cat, less}；
+  \item 能通过简单命令初步“看见”你的系统。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{什么是 WSL2 + Debian}
+\textbf{WSL2（Windows Subsystem for Linux 2）}：
+\begin{itemize}
+  \item 是 Windows 上运行 Linux 用户空间环境的一种方式；
+  \item 提供接近真实 Linux 的命令行体验；
+  \item 适合教学、开发、脚本练习与基础系统理解。
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Debian}：
+\begin{itemize}
+  \item 是一个经典而稳定的 Linux 发行版；
+  \item 软件管理工具清晰，适合教学；
+  \item 我们课上的命令示例默认按 Debian 习惯来讲。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{在 WSL2 中理解“我在哪里”}
+首先要分清三个层面：
+\begin{enumerate}
+  \item 我现在在 \alert{Windows} 里；
+  \item 我打开了一个 \alert{WSL2 终端}；
+  \item 终端里运行的是 \alert{Debian 的 Shell}。
+\end{enumerate}
+
+\vspace{0.5em}
+也就是说，平时输入命令时，实际链条是：
+\[
+\text{用户} \longrightarrow \text{Shell} \longrightarrow \text{Linux 用户空间 / 内核接口}
+\]
+
+\vspace{0.5em}
+在课程中，我们主要关心：
+\begin{itemize}
+  \item Shell 如何解释命令；
+  \item Debian 文件系统如何组织；
+  \item 常见 Linux 命令如何工作。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{Linux 的基本结构}
+可以先把 Linux 理解为一个分层系统：
+
+\vspace{0.5em}
+\[
+\text{用户} \;\longrightarrow\; \text{Shell} \;\longrightarrow\; \text{内核（Kernel）} \;\longrightarrow\; \text{硬件}
+\]
+
+\vspace{0.8em}
+\begin{itemize}
+  \item \textbf{用户}：发出指令的人；
+  \item \textbf{Shell}：接收并解释命令；
+  \item \textbf{内核}：管理 CPU、内存、磁盘、进程、设备；
+  \item \textbf{硬件}：计算机的物理资源。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{Shell 是什么}
+\textbf{Shell} 可以看作“命令解释器”：
+\begin{itemize}
+  \item 接收用户输入；
+  \item 解析命令与参数；
+  \item 调用相应程序；
+  \item 把结果显示出来。
+\end{itemize}
+
+\vspace{0.5em}
+常见 Shell：
+\begin{itemize}
+  \item \texttt{sh}
+  \item \texttt{bash}
+  \item \texttt{zsh}
+\end{itemize}
+
+\vspace{0.5em}
+本课程中以 \texttt{bash} 风格为主。
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{第一个观察系统的命令组}
+下面几条命令就能帮助我们初步认识当前环境：
+
+\begin{lstlisting}[language=bash]
+whoami
+hostname
+uname -a
+echo $SHELL
+pwd
+\end{lstlisting}
+
+\vspace{0.5em}
+它们分别回答：
+\begin{itemize}
+  \item 我是谁？
+  \item 这台机器叫什么？
+  \item 系统内核是什么？
+  \item 我正在使用哪个 Shell？
+  \item 我当前所在的目录是什么？
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键例子：解释几条输出}
+\begin{lstlisting}[language=bash]
+whoami
+echo $SHELL
+uname -a
+\end{lstlisting}
+
+可能看到类似输出：
+\begin{lstlisting}[language=bash]
+student
+/bin/bash
+Linux DESKTOP-XXXX 6.x.x-microsoft-standard-WSL2 ...
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item 当前用户是 \texttt{student}；
+  \item 当前默认 Shell 是 \texttt{/bin/bash}；
+  \item 内核信息中会显示 \texttt{WSL2}，说明你运行在 Windows 提供的 WSL2 环境里。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{Linux 文件系统：从根目录开始}
+Linux 文件系统与 Windows 的盘符习惯不同。
+
+\vspace{0.5em}
+\textbf{Linux 的文件系统是树形结构：}
+\[
+/ \quad \text{（根目录）}
+\]
+
+所有路径都从根目录往下展开。
+
+\vspace{0.5em}
+基本符号：
+\begin{itemize}
+  \item \texttt{/}：根目录
+  \item \texttt{.}：当前目录
+  \item \texttt{..}：上一级目录
+  \item \texttt{\textasciitilde}：当前用户家目录
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{路径与目录的基本命令}
+\begin{lstlisting}[language=bash]
+pwd
+ls
+ls -l
+ls -a
+cd /
+cd ~
+cd ..
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{pwd}：显示当前目录；
+  \item \texttt{ls}：列出目录内容；
+  \item \texttt{ls -l}：长格式显示；
+  \item \texttt{ls -a}：包括隐藏文件；
+  \item \texttt{cd}：切换目录。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键例子：实际走一遍目录}
+\begin{lstlisting}[language=bash]
+pwd
+cd /
+pwd
+ls
+cd ~
+pwd
+ls -a
+\end{lstlisting}
+
+这体会：
+\begin{itemize}
+  \item 当前目录是会变化的；
+  \item 根目录 \texttt{/} 是整个系统的起点；
+  \item 家目录 \texttt{\textasciitilde} 是用户最常工作的地方；
+  \item 隐藏文件通常以 \texttt{.} 开头。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{相对路径和绝对路径}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{绝对路径（absolute path）}
+\begin{itemize}
+  \item 从根目录 \texttt{/} 开始；
+  \item 不依赖当前目录；
+  \item 含义固定。
+\end{itemize}
+
+例子：
+\begin{itemize}
+  \item \texttt{/etc/passwd}
+  \item \texttt{/home/student/test.txt}
+  \item \texttt{/mnt/c/Users/...}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{相对路径（relative path）}
+\begin{itemize}
+  \item 不从 \texttt{/} 开始；
+  \item 依赖当前目录；
+  \item 常用 \texttt{.}、\texttt{..}。
+\end{itemize}
+
+例子（当前目录 \texttt{/home/student}）：
+\begin{itemize}
+  \item \texttt{notes.txt}
+  \item \texttt{./notes.txt}
+  \item \texttt{../student/notes.txt}
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{相对路径与绝对路径：命令例子}
+设当前目录为 \texttt{/home/student}。
+
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{绝对路径}
+\begin{lstlisting}[language=bash]
+pwd
+ls /home/student
+cat /etc/hostname
+cd /home/student/course
+pwd
+\end{lstlisting}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{相对路径}
+\begin{lstlisting}[language=bash]
+pwd
+ls .
+ls course
+cd course
+cd ..
+pwd
+\end{lstlisting}
+\end{column}
+\end{columns}
+
+\vspace{0.3em}
+\textbf{结论：}
+\begin{itemize}
+  \item 绝对路径更稳定；
+  \item 相对路径更简洁；
+  \item \texttt{.} 表示当前目录，\texttt{..} 表示上一级目录。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{文件与目录的基本操作：常用命令}
+常见文件操作命令：
+
+\begin{itemize}
+  \item \texttt{mkdir}：创建目录
+  \item \texttt{touch}：创建空文件
+  \item \texttt{cp}：复制文件
+  \item \texttt{mv}：移动文件或重命名
+  \item \texttt{rm}：删除文件
+  \item \texttt{rmdir}：删除空目录
+\end{itemize}
+
+\vspace{0.8em}
+这些命令对应了最基础的文件管理任务：
+\begin{itemize}
+  \item 新建
+  \item 复制
+  \item 重命名或移动
+  \item 删除
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{文件与目录的基本操作：命令例子}
+\begin{columns}[T]
+
+\begin{column}{0.48\textwidth}
+\textbf{命令序列}
+\begin{lstlisting}[language=bash]
+mkdir demo
+cd demo
+touch a.txt
+cp a.txt b.txt
+mv b.txt c.txt
+ls -l
+rm c.txt
+cd ..
+rmdir demo
+\end{lstlisting}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{对应操作}
+\begin{enumerate}
+  \item 创建目录 \texttt{demo}
+  \item 进入该目录
+  \item 创建文件 \texttt{a.txt}
+  \item 复制得到 \texttt{b.txt}
+  \item 重命名为 \texttt{c.txt}
+  \item 查看目录内容
+  \item 删除文件 \texttt{c.txt}
+  \item 返回上一级并删除目录
+\end{enumerate}
+\end{column}
+
+\end{columns}
+\end{frame}
+% ------------------------------------------------
+\begin{frame}[fragile]{查看文件内容}
+常见查看命令：
+\begin{lstlisting}[language=bash]
+cat /etc/hostname
+head -n 5 /etc/passwd
+tail -n 5 /etc/passwd
+less /etc/services
+\end{lstlisting}
+
+\vspace{0.5em}
+适用场景：
+\begin{itemize}
+  \item \texttt{cat}：短文件直接显示；
+  \item \texttt{head}：看文件开头；
+  \item \texttt{tail}：看文件末尾；
+  \item \texttt{less}：适合翻页查看长文件。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{帮助命令：不会时怎么办}
+Linux 学习中最重要的能力之一，是知道如何自助查帮助。
+
+\begin{lstlisting}[language=bash]
+man ls
+ls --help
+man passwd
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{man}：手册页，最标准；
+  \item \texttt{--help}：快速查看命令常见用法；
+  \item 不是所有内容都要死记，学会查帮助更重要。
+\end{itemize}
+\end{frame}
+
+% % ------------------------------------------------
+% \begin{frame}[fragile]{从 Shell 看系统：综合演示}
+% 建议课堂上带学生完整执行一次：
+
+% \begin{lstlisting}[language=bash]
+% whoami
+% hostname
+% uname -a
+% echo $SHELL
+% pwd
+% ls /
+% ls ~
+% \end{lstlisting}
+
+% \vspace{0.5em}
+% 这组命令把下列概念串起来了：
+% \begin{itemize}
+%   \item 用户
+%   \item 主机
+%   \item 内核
+%   \item Shell
+%   \item 根目录
+%   \item 家目录
+% \end{itemize}
+% \end{frame}
+
+% ------------------------------------------------
+% \begin{frame}{第 1 次课小结}
+% 本次课的核心结论：
+% \begin{itemize}
+%   \item Shell 是理解 Linux 的入口，而不只是“黑框”；
+%   \item Linux 是一个分层系统：用户、Shell、内核、硬件；
+%   \item Linux 文件系统从根目录 \texttt{/} 出发；
+%   \item 通过少量基础命令，已经可以初步观察系统结构。
+% \end{itemize}
+
+% \vspace{0.5em}
+% 下一次课我们将进一步讨论：
+% \begin{itemize}
+%   \item 重要目录与关键文件；
+%   \item 用户、权限、进程；
+%   \item 日志、软件安装与系统维护。
+% \end{itemize}
+% \end{frame}
+
+% ============================================================
+\section{文件、权限、进程与维护}
+
+% ------------------------------------------------
+\begin{frame}{进阶目标}
+希望大家能够：
+\begin{itemize}
+  \item 理解 Linux 重要目录的作用；
+  \item 知道一些关键系统文件的用途；
+  \item 理解用户、权限、进程的基本观念；
+  \item 了解 Debian 中软件安装和服务管理的基本方式；
+  \item 能完成若干基本维护任务。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{Linux 中的重要目录}
+理解以下目录，基本就把 Linux 的骨架看清了：
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+目录 & 作用 \\
+\midrule
+\texttt{/home} & 普通用户家目录 \\
+\texttt{/root} & root 用户家目录 \\
+\texttt{/etc} & 系统配置文件 \\
+\texttt{/usr} & 程序与共享资源 \\
+\texttt{/var} & 日志、缓存等变化数据 \\
+\texttt{/tmp} & 临时文件 \\
+\texttt{/dev} & 设备文件 \\
+\texttt{/proc} & 内核与进程信息的伪文件系统 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键目录示例}
+\begin{lstlisting}[language=bash]
+ls /
+ls /home
+ls /etc
+ls /var
+ls /var/log
+ls /proc | head
+\end{lstlisting}
+
+\vspace{0.5em}
+重点：
+\begin{itemize}
+  \item \texttt{/etc} 往往存放配置；
+  \item \texttt{/var/log} 往往存放日志；
+  \item \texttt{/proc} 不是普通目录，而是“系统状态接口”。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{WSL2 环境下的一个特别提醒}
+在 WSL2 中，还会遇到与 Windows 文件系统的连接。
+
+常见情况：
+\begin{itemize}
+  \item Linux 自己的家目录：如 \texttt{/home/用户名}
+  \item Windows 盘符通常挂载在 \texttt{/mnt} 下
+\end{itemize}
+
+例如：
+\begin{itemize}
+  \item \texttt{/mnt/c} 对应 Windows 的 C 盘
+  \item \texttt{/mnt/d} 对应 Windows 的 D 盘
+\end{itemize}
+
+这意味着：
+\begin{itemize}
+  \item 你可以在 WSL2 中访问 Windows 文件；
+  \item 但课程中更鼓励把实验文件放在 Linux home 目录中，避免权限和路径混乱。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键例子：WSL2 中看 Windows 文件}
+\begin{lstlisting}[language=bash]
+ls /mnt
+ls /mnt/c
+cd /mnt/c
+pwd
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item  WSL2 不是“纯粹孤立”的 Linux；
+  \item 它与 Windows 文件系统有连接；
+  \item 但从 Linux 角度看，依然统一表现为“路径”和“目录”。
+  \item Windows 和 Linux 各看各的。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{几个重要系统文件}
+\begin{itemize}
+  \item \texttt{/etc/passwd}：用户账户基本信息
+  \item \texttt{/etc/group}：用户组信息
+  \item \texttt{/etc/hostname}：主机名
+  \item \texttt{/etc/hosts}：本地主机名映射
+  \item \texttt{/var/log/}：系统日志目录
+\end{itemize}
+
+\vspace{0.5em}
+这些文件和目录说明：Linux 的许多系统信息其实都体现在文本和文件结构中。
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键文件示例}
+\begin{lstlisting}[language=bash]
+head -n 5 /etc/passwd
+head -n 5 /etc/group
+cat /etc/hostname
+cat /etc/hosts
+ls /var/log
+\end{lstlisting}
+
+\vspace{0.5em}
+可以观察：
+\begin{itemize}
+  \item 用户名
+  \item 默认 shell
+  \item 主机名
+  \item 本地名称解析
+  \item 系统日志文件名
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{用户与权限}
+Linux 是一个多用户系统，因此权限非常重要。
+
+\vspace{0.5em}
+\textbf{三类对象：}
+\begin{itemize}
+  \item user：文件所有者
+  \item group：所属组
+  \item others：其他用户
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{三种基本权限：}
+\begin{itemize}
+  \item \texttt{r}：读
+  \item \texttt{w}：写
+  \item \texttt{x}：执行
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{如何查看权限}
+\begin{lstlisting}[language=bash]
+ls -l
+\end{lstlisting}
+
+例如：
+\begin{lstlisting}[language=bash]
+-rw-r--r-- 1 student student  120 Mar 30 10:00 notes.txt
+-rwxr-xr-x 1 student student   35 Mar 30 10:05 demo.sh
+\end{lstlisting}
+
+解释：
+\begin{itemize}
+  \item 第一列表示文件类型与权限；
+  \item 第一组三位是所有者权限；
+  \item 第二组三位是组权限；
+  \item 第三组三位是其他人权限。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键例子：执行权限}
+\begin{lstlisting}[language=bash]
+echo 'echo Hello Linux' > demo.sh
+ls -l demo.sh
+chmod u+x demo.sh
+ls -l demo.sh
+./demo.sh
+\end{lstlisting}
+
+\vspace{0.5em}
+教学重点：
+\begin{itemize}
+  \item 文件是否能“运行”，与 \texttt{x} 权限有关；
+  \item \texttt{chmod} 用于修改权限；
+  \item Shell 脚本本身也是文件。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{当前用户与身份}
+\begin{lstlisting}[language=bash]
+whoami
+id
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{whoami}：当前用户名；
+  \item \texttt{id}：显示用户编号、组编号等身份信息。
+\end{itemize}
+
+\vspace{0.5em}
+特殊用户：
+\begin{itemize}
+  \item \texttt{root} 是超级用户；
+  \item 拥有更高权限，但也意味着更高风险。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{sudo 与管理员操作}
+在 Debian 中，经常通过 \texttt{sudo} 临时提升权限：
+
+\begin{lstlisting}[language=bash]
+sudo apt update
+sudo apt install tree
+\end{lstlisting}
+
+\vspace{0.5em}
+应强调：
+\begin{itemize}
+  \item \texttt{sudo} 不是普通命令前缀，而是权限提升；
+  \item 不理解的命令不要随便加 \texttt{sudo}；
+  \item 管理员权限意味着可能修改系统。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{进程：Linux 正在运行什么}
+\textbf{进程}就是“正在运行的程序”。
+
+\vspace{0.5em}
+Linux 是多任务系统，因此同一时刻会有许多进程存在。
+
+\vspace{0.5em}
+常用查看命令：
+\begin{itemize}
+  \item \texttt{ps}
+  \item \texttt{ps aux}
+  \item \texttt{top}
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{查看进程的例子}
+\begin{lstlisting}[language=bash]
+ps
+ps aux | head
+top
+\end{lstlisting}
+
+\vspace{0.5em}
+解释：
+\begin{itemize}
+  \item \texttt{ps}：当前终端相关进程；
+  \item \texttt{ps aux}：系统中更多进程信息；
+  \item \texttt{top}：动态查看 CPU、内存、进程状态。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{重定向与管道：命令为什么能组合}
+Shell 的强大之处，不只在单个命令，而在于命令的组合。
+
+\vspace{0.5em}
+\textbf{重定向：}
+\begin{itemize}
+  \item \texttt{>}：覆盖写入文件
+  \item \texttt{>>}：追加写入文件
+\end{itemize}
+
+\textbf{管道：}
+\begin{itemize}
+  \item \texttt{|}：把前一个命令的输出交给下一个命令
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{关键例子：重定向与管道}
+\begin{lstlisting}[language=bash]
+echo hello > hello.txt
+echo world >> hello.txt
+cat hello.txt
+
+ps aux | head
+ps aux | grep bash
+cat /etc/passwd | head
+\end{lstlisting}
+
+\vspace{0.5em}
+这说明：
+\begin{itemize}
+  \item 命令输出可以保存为文件；
+  \item 命令也可以像积木一样组合。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{查找与过滤}
+系统维护时很常用的几个命令：
+
+\begin{lstlisting}[language=bash]
+grep bash /etc/passwd
+find ~ -name "*.txt"
+wc -l /etc/passwd
+\end{lstlisting}
+
+\vspace{0.5em}
+用途：
+\begin{itemize}
+  \item \texttt{grep}：在文本中查找关键字；
+  \item \texttt{find}：查找文件；
+  \item \texttt{wc -l}：统计行数。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{Debian 中的软件管理}
+Debian 的典型软件管理工具是 \texttt{apt}。
+
+\vspace{0.5em}
+常见命令：
+\begin{itemize}
+  \item \texttt{sudo apt update}
+  \item \texttt{sudo apt install 包名}
+  \item \texttt{sudo apt remove 包名}
+\end{itemize}
+
+\vspace{0.5em}
+例如安装 \texttt{tree}：
+\begin{itemize}
+  \item 更新软件包索引
+  \item 安装软件
+  \item 使用 \texttt{tree} 查看目录树
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{服务与系统状态}
+现代 Debian 系统中，很多服务由 \texttt{systemd} 管理。
+
+常见命令：
+\begin{lstlisting}[language=bash]
+systemctl status ssh
+sudo systemctl start ssh
+sudo systemctl stop ssh
+sudo systemctl restart ssh
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{status}：查看服务状态；
+  \item \texttt{start/stop/restart}：启动、停止、重启服务。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{日志与排错}
+系统出问题时，一个自然想法是：\alert{去看日志。}
+
+常见方法：
+\begin{lstlisting}[language=bash]
+ls /var/log
+tail -n 20 /var/log/syslog
+journalctl -n 20
+\end{lstlisting}
+
+\vspace{0.5em}
+教学上可强调：
+\begin{itemize}
+  \item 日志是排错的重要依据；
+  \item 不同发行版、不同服务，日志位置可能略有不同；
+  \item \texttt{journalctl} 是 systemd 环境下的重要工具。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}[fragile]{磁盘与内存：基本维护命令}
+\begin{lstlisting}[language=bash]
+df -h
+du -sh ~
+free -h
+\end{lstlisting}
+
+\vspace{0.5em}
+分别回答：
+\begin{itemize}
+  \item \texttt{df -h}：磁盘分区还剩多少空间；
+  \item \texttt{du -sh \textasciitilde}：当前家目录占多大空间；
+  \item \texttt{free -h}：内存使用情况。
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{维护案例 1：空间不够了怎么办}
+一个典型问题：系统提示空间不足。
+
+\vspace{0.5em}
+基本思路：
+\begin{enumerate}
+  \item 先看哪个分区满了；
+  \item 再看哪个目录占用空间大；
+  \item 重点检查日志、缓存、下载目录和大文件。
+\end{enumerate}
+
+\vspace{0.5em}
+对应命令：
+\begin{itemize}
+  \item \texttt{df -h}
+  \item \texttt{du -sh \textasciitilde/*}
+  \item \texttt{du -sh /var/log/*}
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{维护案例 2：某个服务是否正常}
+一个典型问题：SSH 服务能否正常工作？
+
+\vspace{0.5em}
+基本思路：
+\begin{enumerate}
+  \item 看服务状态；
+  \item 看是否有相关进程；
+  \item 看日志。
+\end{enumerate}
+
+\vspace{0.5em}
+对应命令：
+\begin{itemize}
+  \item \texttt{systemctl status ssh}
+  \item \texttt{ps aux | grep ssh}
+  \item \texttt{journalctl -u ssh}
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{维护案例 3：找某个配置文件}
+一个典型问题：配置文件通常在哪里？
+
+\vspace{0.5em}
+经验规律：
+\begin{itemize}
+  \item 多数系统级配置在 \texttt{/etc}；
+  \item 可以结合 \texttt{ls} 与 \texttt{find} 查找。
+\end{itemize}
+
+\vspace{0.5em}
+例如：
+\begin{itemize}
+  \item \texttt{find /etc -name "*ssh*"}
+  \item \texttt{find /etc -name "*network*"}
+\end{itemize}
+\end{frame}
+
+% ------------------------------------------------
+\begin{frame}{危险操作提醒}
+下面几类命令要非常谨慎：
+\begin{itemize}
+  \item \texttt{rm -rf ...}
+  \item \texttt{chmod -R ...}
+  \item \texttt{chown -R ...}
+  \item 不理解内容的 \texttt{sudo} 命令
+\end{itemize}
+
+\vspace{0.5em}
+原则：
+\begin{enumerate}
+  \item 不理解，就不要执行；
+  \item 带 \texttt{sudo} 的命令尤其谨慎；
+  \item 管理员操作前先确认目标路径和对象。
+\end{enumerate}
+\end{frame}
+
+% ------------------------------------------------
+% \begin{frame}{两次课总小结}
+% 从 Shell 角度看 Linux，可以把系统理解为：
+
+% \begin{itemize}
+%   \item 一个有层次的系统：用户、Shell、内核、硬件；
+%   \item 一个有结构的系统：目录、文件、用户、权限、进程、服务；
+%   \item 一个可观察的系统：很多内部状态都能通过命令看到；
+%   \item 一个可维护的系统：日志、软件管理、磁盘与进程检查构成基本维护能力。
+% \end{itemize}
+
+% \vspace{0.5em}
+% 对于 WSL2 + Debian 环境，这些认识既适用于课堂，也适用于今后的开发与学习。
+% \end{frame}
+\section{在 Shell 中了解你的机器}
+
+\begin{frame}{在 Shell 中了解你的机器}
+\centering
+\Large
+硬件、软件与网络环境
+\end{frame}
+
+\begin{frame}{为什么要用 Shell 了解系统？}
+在 Linux 中，系统信息往往可以通过命令直接获得。
+
+\vspace{0.5em}
+我们关心三类信息：
+\begin{itemize}
+  \item \textbf{硬件信息}：CPU、内存、磁盘
+  \item \textbf{软件环境}：系统版本、已安装软件
+  \item \textbf{网络环境}：IP 地址、网络接口、连接状态
+\end{itemize}
+
+\vspace{0.8em}
+目标：
+\begin{itemize}
+  \item 不依赖图形界面
+  \item 用命令快速判断系统状态
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{硬件信息：CPU、内存、磁盘}
+\textbf{CPU 信息}
+\begin{lstlisting}[language=bash]
+lscpu
+cat /proc/cpuinfo | head
+\end{lstlisting}
+
+\textbf{内存信息}
+\begin{lstlisting}[language=bash]
+free -h
+cat /proc/meminfo | head
+\end{lstlisting}
+
+\textbf{磁盘信息}
+\begin{lstlisting}[language=bash]
+df -h
+lsblk
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{如何理解这些信息}
+\begin{itemize}
+  \item \texttt{lscpu}：CPU 核数、架构、频率
+  \item \texttt{free -h}：内存总量、已用、可用
+  \item \texttt{df -h}：磁盘分区使用情况
+  \item \texttt{lsblk}：磁盘与分区结构
+\end{itemize}
+
+\vspace{0.8em}
+重要观念：
+\begin{itemize}
+  \item Linux 中很多“硬件信息”来自 \texttt{/proc} 伪文件系统
+  \item 这些数据是由内核动态提供的
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{软件环境：系统与软件}
+\textbf{系统版本}
+\begin{lstlisting}[language=bash]
+uname -a
+cat /etc/os-release
+\end{lstlisting}
+
+\textbf{已安装软件（Debian）}
+\begin{lstlisting}[language=bash]
+dpkg -l | head
+\end{lstlisting}
+
+\textbf{查找命令位置}
+\begin{lstlisting}[language=bash]
+which python
+which bash
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{软件环境的理解}
+\begin{itemize}
+  \item \texttt{uname -a}：内核信息（WSL2 会显示 microsoft）
+  \item \texttt{/etc/os-release}：发行版信息（Debian）
+  \item \texttt{dpkg -l}：已安装软件列表
+  \item \texttt{which}：命令对应的可执行文件路径
+\end{itemize}
+
+\vspace{0.8em}
+关键理解：
+\begin{itemize}
+  \item “命令”本质上是可执行文件
+  \item 软件安装 = 文件被放入系统目录
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]{网络环境：接口与连接}
+\textbf{查看 IP 和网卡}
+\begin{lstlisting}[language=bash]
+ip addr
+\end{lstlisting}
+
+\textbf{查看路由}
+\begin{lstlisting}[language=bash]
+ip route
+\end{lstlisting}
+
+\textbf{测试网络连接}
+\begin{lstlisting}[language=bash]
+ping -c 4 baidu.com
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{WSL2 中的网络特点}
+\begin{itemize}
+  \item WSL2 使用虚拟网络接口
+  \item IP 通常不是 Windows 主机的 IP
+  \item 网络通过 Windows 转发
+\end{itemize}
+
+\vspace{0.8em}
+观察重点：
+\begin{itemize}
+  \item \texttt{ip addr} 中的地址
+  \item 是否能 \texttt{ping} 外网
+  \item DNS 是否正常
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{综合示例：快速了解一台机器}
+在一台新机器上，可以依次执行：
+
+\begin{lstlisting}[language=bash]
+whoami
+uname -a
+cat /etc/os-release
+lscpu
+free -h
+df -h
+ip addr
+\end{lstlisting}
+
+\vspace{0.5em}
+这些命令可以快速回答：
+\begin{itemize}
+  \item 我是谁？系统是什么？
+  \item 硬件资源如何？
+  \item 磁盘空间是否充足？
+  \item 网络是否正常？
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{检查访问某网站的完全链路}
+以访问 \texttt{www.example.com} 为例，可以按如下顺序检查：
+
+\begin{enumerate}
+  \item \textbf{DNS 是否正常：}
+\begin{lstlisting}[language=bash]
+ping -c 1 www.example.com
+\end{lstlisting}
+
+  \item \textbf{本机到外网是否连通：}
+\begin{lstlisting}[language=bash]
+ping -c 4 8.8.8.8
+\end{lstlisting}
+
+  \item \textbf{路由是否正常：}
+\begin{lstlisting}[language=bash]
+ip route
+tracepath www.example.com
+\end{lstlisting}
+
+  \item \textbf{HTTP/HTTPS 是否可访问：}
+\begin{lstlisting}[language=bash]
+curl -I https://www.example.com
+\end{lstlisting}
+\end{enumerate}
+
+\vspace{0.3em}
+结论：访问网站这件事，通常涉及 \alert{DNS、网络连通性、路由、应用层协议} 四个层次。
+\end{frame}
+
+\end{document}

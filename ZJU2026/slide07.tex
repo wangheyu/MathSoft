@@ -1,0 +1,695 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{codekw}{RGB}{0,0,150}
+\definecolor{codestr}{RGB}{163,21,21}
+\definecolor{codecom}{RGB}{0,128,0}
+
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  stringstyle=\color{codestr},
+  commentstyle=\color{codecom},
+  showstringspaces=false,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible
+}
+
+\title{Shell 编程基础}
+\author{《人工智能与数学软件》课程}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{本节目标}
+学完这一节后，希望能够：
+\begin{itemize}
+  \item 理解什么是 Shell 脚本，为什么要写脚本；
+  \item 会写最基本的 \texttt{bash} 脚本；
+  \item 掌握变量、参数、分支、循环的基本用法；
+  \item 能把若干条命令组织成一个可复用的小程序；
+  \item 能读懂并修改简单的系统管理脚本。
+\end{itemize}
+\end{frame}
+
+\section{为什么要写 Shell 脚本}
+
+\begin{frame}{为什么要写 Shell 脚本}
+Shell 编程的核心思想是：
+
+\begin{center}
+\Large
+把“手工重复输入的命令”写成“可以反复执行的程序”
+\end{center}
+
+\vspace{0.5em}
+常见用途：
+\begin{itemize}
+  \item 批量处理文件；
+  \item 自动备份、自动清理；
+  \item 自动检查系统状态；
+  \item 把多个命令组织成一个工作流。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Shell 编程的特点}
+优点：
+\begin{itemize}
+  \item 直接调用系统命令；
+  \item 写起来快，适合自动化；
+  \item 非常适合文件、进程、日志、网络等任务。
+\end{itemize}
+
+\vspace{0.5em}
+局限：
+\begin{itemize}
+  \item 大型程序维护性较差；
+  \item 数据结构和语法能力有限；
+  \item 复杂算法通常更适合 Python、C/C++ 等语言。
+\end{itemize}
+
+\vspace{0.5em}
+所以，Shell 最适合做“\alert{系统胶水层}”。
+\end{frame}
+
+\section{第一个脚本}
+
+\begin{frame}[fragile]{第一个 Shell 脚本}
+先写一个最简单的脚本文件 \texttt{hello.sh}：
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+echo "Hello, Shell"
+echo "Today is:"
+date
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item 第一行 \texttt{\#!/bin/bash} 称为 shebang；
+  \item 它告诉系统：用 \texttt{bash} 来解释这个脚本；
+  \item 后面每一行本质上都是普通 Shell 命令。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{如何运行脚本}
+方法一：直接交给 bash 执行
+\begin{lstlisting}[language=bash]
+bash hello.sh
+\end{lstlisting}
+
+方法二：先加执行权限，再直接运行
+\begin{lstlisting}[language=bash]
+chmod u+x hello.sh
+./hello.sh
+\end{lstlisting}
+
+教学上应强调：
+\begin{itemize}
+  \item 脚本本质上是文本文件；
+  \item “能不能执行”取决于权限和解释器；
+  \item \texttt{./} 表示“当前目录中的脚本”。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{脚本中的注释}
+注释以 \texttt{\#} 开头：
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+# 这是一个简单示例
+echo "Start"
+# 输出当前用户
+whoami
+\end{lstlisting}
+
+作用：
+\begin{itemize}
+  \item 解释脚本功能；
+  \item 标注关键步骤；
+  \item 便于自己和别人维护。
+\end{itemize}
+\end{frame}
+
+\section{变量与参数}
+
+\begin{frame}[fragile]{变量的基本写法}
+Shell 中定义变量时，等号两边不要有空格：
+
+\begin{lstlisting}[language=bash]
+name="Alice"
+course="Shell Programming"
+echo $name
+echo $course
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item 使用变量时，在前面加 \texttt{\$}；
+  \item 右边通常写成字符串；
+  \item 变量名一般用字母、数字、下划线。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{一个变量示例}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+user=$(whoami)
+today=$(date +%F)
+
+echo "Current user: $user"
+echo "Today: $today"
+\end{lstlisting}
+
+这里用到了命令替换：
+\begin{itemize}
+  \item \texttt{\$(whoami)}：把命令输出赋给变量；
+  \item \texttt{\$(date +\%F)}：得到类似 2026-03-30 的日期。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{位置参数：让脚本接收输入}
+脚本运行时可以带参数：
+
+\begin{lstlisting}[language=bash]
+bash greet.sh Tom
+\end{lstlisting}
+
+脚本内容：
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+echo "Hello, $1"
+\end{lstlisting}
+
+常见位置参数：
+\begin{itemize}
+  \item \texttt{\$1}, \texttt{\$2}, \texttt{\$3}：第 1、2、3 个参数；
+  \item \texttt{\$0}：脚本名；
+  \item \texttt{\$\#}：参数个数；
+  \item \texttt{\$@}：所有参数。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{参数示例}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+echo "Script name: $0"
+echo "First arg: $1"
+echo "Second arg: $2"
+echo "Number of args: $#"
+echo "All args: $@"
+\end{lstlisting}
+
+例如执行：
+\begin{lstlisting}[language=bash]
+bash args.sh file1.txt file2.txt
+\end{lstlisting}
+\end{frame}
+
+\section{条件判断}
+
+\begin{frame}[fragile]{if 条件语句}
+Shell 中最常见的分支结构是 \texttt{if}：
+
+\begin{lstlisting}[language=bash]
+if [ 条件 ]
+then
+  命令
+else
+  命令
+fi
+\end{lstlisting}
+
+注意：
+\begin{itemize}
+  \item \texttt{[ ]} 两边要留空格；
+  \item \texttt{fi} 是 \texttt{if} 的结束；
+  \item 条件成立时执行 \texttt{then} 分支。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{判断文件是否存在}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+if [ -f "$1" ]
+then
+  echo "File exists."
+else
+  echo "File does not exist."
+fi
+\end{lstlisting}
+
+执行：
+\begin{lstlisting}[language=bash]
+bash check_file.sh notes.txt
+\end{lstlisting}
+
+这里：
+\begin{itemize}
+  \item \texttt{-f} 判断是否为普通文件；
+  \item \texttt{"\$1"} 表示脚本的第一个参数。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{常见测试条件}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+写法 & 含义 \\
+\midrule
+\texttt{-f file} & 是否为普通文件 \\
+\texttt{-d dir} & 是否为目录 \\
+\texttt{-e path} & 路径是否存在 \\
+\texttt{-z str} & 字符串是否为空 \\
+\texttt{a = b} & 字符串是否相等 \\
+\texttt{n -gt m} & 是否大于 \\
+\texttt{n -lt m} & 是否小于 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+例如：
+\begin{lstlisting}[language=bash]
+if [ "$1" = "yes" ]
+then
+  echo "confirmed"
+fi
+\end{lstlisting}
+\end{frame}
+
+\section{循环}
+
+\begin{frame}[fragile]{for 循环}
+\texttt{for} 循环适合遍历一组对象：
+
+\begin{lstlisting}[language=bash]
+for x in a b c
+do
+  echo $x
+done
+\end{lstlisting}
+
+输出：
+\begin{lstlisting}[language=bash]
+a
+b
+c
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{for 循环处理多个文件}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+for f in *.txt
+do
+  echo "Found file: $f"
+done
+\end{lstlisting}
+
+用途：
+\begin{itemize}
+  \item 批量处理同类文件；
+  \item 是 Shell 自动化中最常见的模式之一。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{while 循环}
+\texttt{while} 循环适合“条件满足就继续执行”：
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+count=1
+while [ $count -le 3 ]
+do
+  echo $count
+  count=$((count + 1))
+done
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item \texttt{\$((...))} 用于整数运算；
+  \item 这里会输出 1、2、3。
+\end{itemize}
+\end{frame}
+
+\section{实用例子}
+
+\begin{frame}[fragile]{例 1：批量统计文本文件行数}
+脚本：
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+for f in *.txt
+do
+  echo -n "$f : "
+  wc -l "$f"
+done
+\end{lstlisting}
+
+这个脚本做的事：
+\begin{itemize}
+  \item 找到当前目录下所有 \texttt{.txt} 文件；
+  \item 逐个调用 \texttt{wc -l}；
+  \item 输出每个文件的行数。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例 2：简单系统体检脚本}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+echo "User: $(whoami)"
+echo "Kernel:"
+uname -a
+echo
+echo "Memory:"
+free -h
+echo
+echo "Disk:"
+df -h
+\end{lstlisting}
+
+用途：
+\begin{itemize}
+  \item 快速查看当前用户；
+  \item 查看内核信息；
+  \item 查看内存和磁盘状态。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例 3：检查参数并给出提示}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+if [ $# -lt 1 ]
+then
+  echo "Usage: bash greet.sh NAME"
+  exit 1
+fi
+
+echo "Hello, $1"
+\end{lstlisting}
+
+这里增加了一个重要观念：
+\begin{itemize}
+  \item 脚本应该检查输入是否正确；
+  \item \texttt{exit 1} 表示异常退出。
+\end{itemize}
+\end{frame}
+
+\section{要点总结}
+
+\begin{frame}{Shell 编程的几个关键要点}
+\begin{enumerate}
+  \item 脚本就是一串按顺序执行的 Shell 命令；
+  \item shebang 指定解释器；
+  \item 变量和参数让脚本更灵活；
+  \item \texttt{if} 负责分支，\texttt{for}/\texttt{while} 负责循环；
+  \item Shell 最适合自动化系统任务和批量处理。
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{这一节最值得记住的模式}
+建议记住以下 4 个“模板”：
+
+\vspace{0.5em}
+\textbf{1. 脚本头}
+\begin{itemize}
+  \item \texttt{\#!/bin/bash}
+\end{itemize}
+
+\textbf{2. 变量}
+\begin{itemize}
+  \item \texttt{name="Alice"}，使用时 \texttt{\$name}
+\end{itemize}
+
+\textbf{3. 判断}
+\begin{itemize}
+  \item \texttt{if [ -f "\$1" ] ... fi}
+\end{itemize}
+
+\textbf{4. 遍历}
+\begin{itemize}
+  \item \texttt{for f in *.txt; do ...; done}
+\end{itemize}
+\end{frame}
+
+\section{正则表达式与 Shell}
+
+\begin{frame}{正则表达式与 Shell}
+\centering
+\Large
+用模式匹配处理文本
+\end{frame}
+
+\begin{frame}{为什么要学正则表达式}
+Shell 编程中，经常需要处理文本：
+
+\begin{itemize}
+  \item 从日志中找某些行
+  \item 从文件中筛选包含特定模式的内容
+  \item 批量提取用户名、日期、数字等信息
+\end{itemize}
+
+\vspace{0.8em}
+这时就需要一种“按模式匹配字符串”的方法：
+
+\begin{center}
+\Large
+正则表达式（regular expression）
+\end{center}
+\end{frame}
+
+\begin{frame}{什么是正则表达式}
+正则表达式可以理解为：
+
+\begin{center}
+\Large
+描述一类字符串的规则
+\end{center}
+
+\vspace{0.8em}
+例如：
+\begin{itemize}
+  \item \texttt{abc}：匹配字符串 \texttt{abc}
+  \item \texttt{[0-9]}：匹配一个数字
+  \item \texttt{[a-z]+}：匹配一个或多个小写字母
+\end{itemize}
+
+\vspace{0.8em}
+在 Shell 中，最常见的使用场景是配合：
+\begin{itemize}
+  \item \texttt{grep}
+  \item \texttt{sed}
+  \item \texttt{awk}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{常见正则表达式符号}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+符号 & 含义 \\
+\midrule
+\texttt{.} & 任意单个字符 \\
+\texttt{[abc]} & 匹配 \texttt{a,b,c} 中任一个 \\
+\texttt{[0-9]} & 匹配一个数字 \\
+\texttt{[a-z]} & 匹配一个小写字母 \\
+\texttt{\^} & 匹配行首 \\
+\texttt{\$} & 匹配行尾 \\
+\texttt{*} & 前一模式重复 0 次或多次 \\
+\texttt{+} & 前一模式重复 1 次或多次 \\
+\texttt{?} & 前一模式重复 0 次或 1 次 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\vspace{0.5em}
+注意：\texttt{+}、\texttt{?} 常见于扩展正则表达式。
+\end{frame}
+
+\begin{frame}{读懂几个基本模式}
+\begin{itemize}
+  \item \texttt{abc}：匹配包含 \texttt{abc} 的文本
+  \item \texttt{\^root}：匹配以 \texttt{root} 开头的行
+  \item \texttt{bash\$}：匹配以 \texttt{bash} 结尾的行
+  \item \texttt{[0-9]}：匹配任意一个数字
+  \item \texttt{[0-9][0-9]}：匹配两个数字
+  \item \texttt{[a-z]+}：匹配一个或多个连续小写字母
+\end{itemize}
+
+\vspace{0.8em}
+一个重要观念：
+\begin{itemize}
+  \item 正则表达式描述的是“模式”，不是某一个固定字符串。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{在 Shell 中最常见的搭配：grep}
+\texttt{grep} 用来在文本中查找匹配某个模式的行。
+
+\vspace{0.5em}
+基本形式：
+\begin{lstlisting}[language=bash]
+grep '模式' 文件名
+\end{lstlisting}
+
+例如：
+\begin{lstlisting}[language=bash]
+grep 'root' /etc/passwd
+grep '^root' /etc/passwd
+grep 'bash$' /etc/passwd
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item 第一条：找包含 \texttt{root} 的行
+  \item 第二条：找以 \texttt{root} 开头的行
+  \item 第三条：找以 \texttt{bash} 结尾的行
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{扩展正则表达式：grep -E}
+有些更方便的写法，需要使用扩展正则表达式：
+
+\begin{lstlisting}[language=bash]
+grep -E '[0-9]+'
+grep -E '^[a-z]+$'
+\end{lstlisting}
+
+\vspace{0.5em}
+解释：
+\begin{itemize}
+  \item \verb|[0-9]+|：一个或多个数字
+  \item \verb|^[a-z]+$|：整行只包含一个或多个小写字母
+\end{itemize}
+
+\vspace{0.8em}
+教学上可以简单记成：
+\begin{itemize}
+  \item \texttt{grep}：基本正则
+  \item \texttt{grep -E}：扩展正则，更方便
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例 1：从 \texttt{/etc/passwd} 中筛选}
+\textbf{找出以 \texttt{root} 开头的行：}
+\begin{lstlisting}[language=bash]
+grep '^root' /etc/passwd
+\end{lstlisting}
+
+\textbf{找出登录 shell 是 \texttt{/bin/bash} 的用户：}
+\begin{lstlisting}[language=bash]
+grep 'bash$' /etc/passwd
+\end{lstlisting}
+
+\textbf{找出用户名中包含数字的行：}
+\begin{lstlisting}[language=bash]
+grep -E '[0-9]' /etc/passwd
+\end{lstlisting}
+
+\vspace{0.5em}
+这说明：正则表达式特别适合处理系统文本文件。
+\end{frame}
+
+\begin{frame}[fragile]{例 2：在脚本中筛选文本文件}
+下面这个脚本只处理 \texttt{.txt} 文件：
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+for f in *
+do
+  if echo "$f" | grep -E '\.txt$' > /dev/null
+  then
+    echo "Text file: $f"
+  fi
+done
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item \texttt{\.txt\$} 表示以 \texttt{.txt} 结尾
+  \item \texttt{> /dev/null} 表示不显示匹配结果，只关心是否匹配成功
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例 3：检查输入是否为整数}
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+if echo "$1" | grep -E '^[0-9]+$' > /dev/null
+then
+  echo "Input is an integer."
+else
+  echo "Input is not an integer."
+fi
+\end{lstlisting}
+
+这个模式：
+\begin{lstlisting}[language=bash]
+^[0-9]+$
+\end{lstlisting}
+
+表示：
+\begin{itemize}
+  \item 从行首开始
+  \item 中间是一个或多个数字
+  \item 到行尾结束
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例 4：从文本中找类似 IP 地址的模式}
+例如，从日志中找形如 \texttt{a.b.c.d} 的片段：
+
+\begin{lstlisting}[language=bash]
+grep -E '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' logfile.txt
+\end{lstlisting}
+
+说明：
+\begin{itemize}
+  \item \texttt{\.} 表示字面上的点号
+  \item \texttt{[0-9]+} 表示一个或多个数字
+\end{itemize}
+
+\vspace{0.5em}
+提醒：
+\begin{itemize}
+  \item 这个模式能匹配“像 IP 的字符串”
+  \item 但不保证一定是合法 IP
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{grep 与 if 的配合}
+在 Shell 中，经常不是要“打印匹配结果”，而是要“根据是否匹配来决定下一步”。
+
+\begin{lstlisting}[language=bash]
+if echo "$1" | grep -E '^[a-z]+$' > /dev/null
+then
+  echo "all lowercase"
+else
+  echo "not all lowercase"
+fi
+\end{lstlisting}
+
+这里的逻辑是：
+\begin{itemize}
+  \item 若 \texttt{grep} 匹配成功，则返回成功状态；
+  \item \texttt{if} 就进入 \texttt{then} 分支；
+  \item 否则进入 \texttt{else} 分支。
+\end{itemize}
+\end{frame}
+
+\end{document}
