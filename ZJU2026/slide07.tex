@@ -692,4 +692,211 @@ fi
 \end{itemize}
 \end{frame}
 
+\section{环境变量}
+
+\begin{frame}{什么是环境变量}
+环境变量可以理解为：
+
+\begin{center}
+\Large
+由 Shell 和系统维护、可被程序继承的变量
+\end{center}
+
+\vspace{0.8em}
+它们常用于保存：
+\begin{itemize}
+  \item 当前用户信息
+  \item 家目录位置
+  \item 默认 Shell
+  \item 可执行程序搜索路径
+  \item 语言、编辑器等配置
+\end{itemize}
+
+\vspace{0.8em}
+与普通变量相比，环境变量更强调“\alert{会被子进程继承}”。
+\end{frame}
+
+\begin{frame}{环境变量举例}
+环境变量决定了很多程序运行时的行为。
+
+\vspace{0.5em}
+例如：
+\begin{itemize}
+  \item \texttt{HOME} 决定用户家目录
+  \item \texttt{PATH} 决定命令到哪里去找
+  \item \texttt{SHELL} 表示当前默认 Shell
+  \item \texttt{PWD} 表示当前工作目录
+\end{itemize}
+
+\vspace{0.8em}
+所以，理解环境变量，就是理解：
+\begin{center}
+\Large
+程序运行时“默认知道些什么”
+\end{center}
+\end{frame}
+
+\begin{frame}[fragile]{查看环境变量}
+查看单个环境变量：
+
+\begin{lstlisting}[language=bash]
+echo $HOME
+echo $PATH
+echo $SHELL
+echo $PWD
+\end{lstlisting}
+
+查看全部环境变量：
+
+\begin{lstlisting}[language=bash]
+env
+\end{lstlisting}
+
+或：
+
+\begin{lstlisting}[language=bash]
+printenv
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{常见环境变量}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+变量名 & 含义 \\
+\midrule
+\texttt{HOME} & 当前用户的家目录 \\
+\texttt{PATH} & 命令搜索路径 \\
+\texttt{SHELL} & 当前默认 Shell \\
+\texttt{PWD} & 当前工作目录 \\
+\texttt{USER} & 当前用户名 \\
+\texttt{LANG} & 语言与区域设置 \\
+\texttt{EDITOR} & 默认编辑器 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+\begin{frame}{特别重要：\texttt{PATH}}
+当你输入一条命令，如：
+
+\begin{center}
+\texttt{ls}
+\end{center}
+
+Shell 会到 \texttt{PATH} 指定的目录中查找对应程序。
+
+\vspace{0.8em}
+例如：
+\begin{itemize}
+  \item \texttt{/usr/bin}
+  \item \texttt{/bin}
+  \item \texttt{/usr/local/bin}
+\end{itemize}
+
+\vspace{0.8em}
+这就是为什么直接输入 \texttt{ls} 就能运行，而不必写完整路径。
+\end{frame}
+
+\begin{frame}[fragile]{查看 \texttt{PATH} 与命令位置}
+\begin{lstlisting}[language=bash]
+echo $PATH
+which ls
+which bash
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{echo \$PATH}：显示当前搜索路径
+  \item \texttt{which ls}：查看 \texttt{ls} 命令实际在哪
+  \item \texttt{which bash}：查看 \texttt{bash} 程序路径
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{普通变量与环境变量}
+定义普通变量：
+
+\begin{lstlisting}[language=bash]
+name="Alice"
+echo $name
+\end{lstlisting}
+
+定义环境变量：
+
+\begin{lstlisting}[language=bash]
+export name="Alice"
+echo $name
+\end{lstlisting}
+
+\vspace{0.8em}
+区别：
+\begin{itemize}
+  \item 普通变量只在当前 Shell 中有效
+  \item 环境变量会传递给该 Shell 启动的子进程
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{在脚本中使用环境变量}
+例如写一个脚本：
+
+\begin{lstlisting}[language=bash]
+#!/bin/bash
+echo "User: $USER"
+echo "Home: $HOME"
+echo "Shell: $SHELL"
+echo "Current directory: $PWD"
+\end{lstlisting}
+
+\vspace{0.8em}
+这说明：
+\begin{itemize}
+  \item 脚本中可以直接使用现成的环境变量；
+  \item 它们为脚本提供运行时上下文。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{环境变量在哪里配置}
+常见做法是写入 Shell 的启动文件，例如：
+
+\begin{itemize}
+  \item \texttt{\~/.bashrc}
+  \item \texttt{\~/.profile}
+\end{itemize}
+
+\vspace{0.8em}
+例如在 \texttt{\~/.bashrc} 中加入：
+
+\begin{center}
+\texttt{export PATH="\$PATH:\$HOME/bin"}
+\end{center}
+
+含义是：
+\begin{itemize}
+  \item 把 \texttt{\$HOME/bin} 加入命令搜索路径
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{例子：把自己的脚本目录加入 \texttt{PATH}}
+假设你把脚本放在：
+
+\begin{center}
+\texttt{\$HOME/bin}
+\end{center}
+
+那么在 \texttt{\~/.bashrc} 中加入：
+
+\begin{lstlisting}[language=bash]
+export PATH="$PATH:$HOME/bin"
+\end{lstlisting}
+
+之后重新加载：
+
+\begin{lstlisting}[language=bash]
+source ~/.bashrc
+\end{lstlisting}
+
+这样就可以直接运行自己的脚本，而不必每次写 \texttt{./脚本名}。
+\end{frame}
+
 \end{document}
