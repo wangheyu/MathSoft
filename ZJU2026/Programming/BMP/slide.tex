@@ -1,0 +1,776 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usepackage[UTF8]{ctex}
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\usetikzlibrary{positioning,calc}
+
+\definecolor{myblue}{RGB}{33,79,138}
+\definecolor{mygreen}{RGB}{40,120,70}
+\definecolor{mygray}{RGB}{245,247,250}
+\setbeamercolor{structure}{fg=myblue}
+\setbeamertemplate{navigation symbols}{}
+
+\lstset{
+  language=C,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{myblue}\bfseries,
+  commentstyle=\color{mygreen},
+  stringstyle=\color{red!70!black},
+  showstringspaces=false,
+  frame=single,
+  backgroundcolor=\color{mygray},
+  columns=fullflexible,
+  keepspaces=true,
+  breaklines=true,
+  tabsize=4
+}
+
+\title{从 C 语言到 BMP 位图程序}
+\subtitle{结合一个简单的位图生成器理解语言、编译、注释与文件格式}
+\author{课程讲义 / Beamer 示例}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{目录}
+  \tableofcontents
+\end{frame}
+
+\section{C 语言的定位}
+
+\begin{frame}{C 语言的定位}
+\begin{itemize}
+  \item C 语言是一门\alert{通用的系统级程序设计语言}，强调\textbf{效率、可控性、可移植性}。
+  \item 它既接近硬件，又保留了高级语言的基本抽象，因此常被称为\textbf{“中级语言”}。
+  \item 典型应用场景：
+  \begin{itemize}
+    \item 操作系统、驱动程序、嵌入式开发
+    \item 编译器、解释器、运行时库
+    \item 网络程序、高性能基础软件
+    \item 作为理解内存、指针、数据布局的教学语言
+  \end{itemize}
+  \item 很多现代语言和系统软件都深受 C 的影响。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{C 语言的特点与局限}
+\begin{columns}[T]
+\column{0.52\textwidth}
+\textbf{优势}
+\begin{itemize}
+  \item 语法相对精炼
+  \item 运行效率高
+  \item 内存和数据布局可精确控制
+  \item 与操作系统接口紧密
+  \item 生态成熟，编译器广泛可用
+\end{itemize}
+
+\column{0.44\textwidth}
+\textbf{需要注意}
+\begin{itemize}
+  \item 抽象层次较低
+  \item 容易出现越界、悬空指针等错误
+  \item 需要程序员自行管理很多细节
+  \item 大型项目中更依赖规范、注释和文档
+\end{itemize}
+\end{columns}
+
+\vspace{0.4em}
+\begin{block}{课程视角}
+学习 C 的价值不仅在于“会写程序”，更在于理解\textbf{程序如何被编译、数据如何在内存与文件中组织、软件如何与硬件和操作系统交互}。
+\end{block}
+\end{frame}
+
+\section{C 语言的结构和编译}
+
+
+\begin{frame}{C 语言程序的基本结构：以 hello 工程为例}
+一个简单但完整的 C 程序，往往不是只放在一个文件里，而是拆分成若干部分，各自承担不同角色。
+
+\vspace{0.5em}
+\begin{block}{这个 hello 示例由三个文件组成}
+\begin{itemize}
+  \item \texttt{hello.h}：提供宏常量与函数声明  
+  其中给出字符串常量 \texttt{MSG}，并声明加法函数 \texttt{add}。 
+  \item \texttt{hello.c}：提供函数实现  
+  这里实现了 \texttt{add}，功能是返回两个整数的和。
+  \item \texttt{main\_hello.c}：提供程序入口  
+  在 \texttt{main} 中定义变量、输出问候信息，并调用加法函数输出结果。
+\end{itemize}
+\end{block}
+
+\vspace{0.4em}
+\begin{exampleblock}{由此可以看到 C 程序的常见结构}
+\begin{enumerate}
+  \item \textbf{接口部分}：告诉别人“有哪些内容可以使用”
+  \item \textbf{实现部分}：给出函数的具体实现
+  \item \textbf{入口部分}：组织程序运行流程
+\end{enumerate}
+\end{exampleblock}
+
+\vspace{0.3em}
+\begin{alertblock}{教学要点}
+C 语言程序的“结构”不仅体现在语句层面，更体现在\textbf{多文件分工}上：声明、实现和调用彼此分离。
+\end{alertblock}
+\end{frame}
+
+\begin{frame}{C 语言的编译过程：从源文件到可执行程序}
+这个 hello 工程最终要变成一个可执行文件。其间通常经历以下步骤：
+
+\vspace{0.4em}
+\begin{center}
+\begin{tikzpicture}[node distance=1.25cm,>=stealth]
+  \node[draw,rounded corners,fill=mygray,minimum width=2.4cm,minimum height=0.9cm] (src1) {\texttt{hello.c}};
+  \node[draw,rounded corners,fill=mygray,below=0.7cm of src1,minimum width=2.4cm,minimum height=0.9cm] (src2) {\texttt{main\_hello.c}};
+  \node[draw,rounded corners,fill=mygray,right=2.0cm of src1,minimum width=2.7cm,minimum height=0.9cm] (obj1) {\texttt{hello.o}};
+  \node[draw,rounded corners,fill=mygray,right=2.0cm of src2,minimum width=2.7cm,minimum height=0.9cm] (obj2) {\texttt{main\_hello.o}};
+  \node[draw,rounded corners,fill=mygray,right=2.2cm of $(obj1)!0.5!(obj2)$,minimum width=3.0cm,minimum height=1.0cm] (exe) {可执行文件};
+
+  \draw[->,thick] (src1) -- node[above]{编译} (obj1);
+  \draw[->,thick] (src2) -- node[below]{编译} (obj2);
+  \draw[->,thick] (obj1) -- (exe);
+  \draw[->,thick] (obj2) -- (exe);
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.4em}
+\textbf{各步实际完成的功能：}
+\begin{itemize}
+  \item \textbf{预处理}：处理头文件包含、宏替换等内容  
+  例如把 \texttt{hello.h} 中的声明和常量提供给其他源文件使用。
+  \item \textbf{编译}：把每个源文件分别翻译成机器相关的目标文件
+  \item \textbf{链接}：把多个目标文件以及所需库函数连接在一起，形成最终程序
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{为什么要把 \texttt{.h} 和 \texttt{.c} 分开}
+\begin{columns}[T]
+\column{0.49\textwidth}
+\textbf{\texttt{.h} 文件的角色：接口}
+\begin{itemize}
+  \item 给出“能提供什么”
+  \item 适合放：
+  \begin{itemize}
+    \item 宏常量
+    \item 类型定义
+    \item 函数声明
+  \end{itemize}
+  \item 让其他源文件知道如何使用这些内容
+\end{itemize}
+
+\vspace{0.5em}
+在本例中，\texttt{hello.h} 提供了：
+\begin{itemize}
+  \item 问候语常量 \texttt{MSG}
+  \item 加法函数的声明
+\end{itemize}
+
+\column{0.47\textwidth}
+\textbf{\texttt{.c} 文件的角色：实现}
+\begin{itemize}
+  \item 给出“具体怎么做”
+  \item 适合放：
+  \begin{itemize}
+    \item 函数的实现
+    \item 具体的运算逻辑
+    \item 内部细节
+  \end{itemize}
+\end{itemize}
+
+\vspace{0.5em}
+在本例中：
+\begin{itemize}
+  \item \texttt{hello.c} 实现加法函数
+  \item \texttt{main\_hello.c} 负责组织程序运行并输出结果
+\end{itemize}
+\end{columns}
+
+\end{frame}
+\section{计算机位图概念、BMP 的格式和 C 语言的实现}
+
+\begin{frame}{什么是计算机位图}
+\begin{itemize}
+  \item 位图（Raster / Bitmap）把图像看成一个\textbf{像素矩阵}。
+  \item 每个像素记录自己的颜色信息，例如 RGB 或 BGR。
+  \item 图像质量与以下因素相关：
+  \begin{itemize}
+    \item \textbf{分辨率}：宽 $\times$ 高，像素越多，图像越细致
+    \item \textbf{颜色深度}：每个像素用多少位表示颜色
+  \end{itemize}
+  \item 例如 24 位真彩色图像中：
+  \begin{itemize}
+    \item 每个像素使用 3 个字节
+    \item 可表示 $2^{24}$ 种颜色
+  \end{itemize}
+\end{itemize}
+
+\begin{block}{本程序中的像素表示}
+一个像素占 3 字节，按 \texttt{B, G, R} 顺序存储；因此 \texttt{(0,255,255)} 对应黄色。
+\end{block}
+\end{frame}
+
+\begin{frame}{BMP 文件的整体结构}
+\begin{center}
+\begin{tikzpicture}[>=stealth]
+  \draw[fill=blue!8] (0,0) rectangle (2.8,1.1);
+  \draw[fill=green!8] (2.8,0) rectangle (6.3,1.1);
+  \draw[fill=orange!10] (6.3,0) rectangle (11.8,1.1);
+  \node at (1.4,0.55) {文件头};
+  \node at (4.55,0.55) {信息头};
+  \node at (9.05,0.55) {像素数据};
+\end{tikzpicture}
+\end{center}
+
+\vspace{0.4em}
+\begin{itemize}
+  \item \textbf{BITMAPFILEHEADER}：说明“这是不是 BMP，像素数据从哪里开始”
+  \item \textbf{BITMAPINFOHEADER}：说明“图像多大、多少位色、是否压缩”
+  \item \textbf{Pixel Array}：真正的像素字节流
+\end{itemize}
+
+\begin{exampleblock}{24 位 BMP 的特点}
+无调色板、通常不压缩、每个像素 3 字节、每行需要按 4 字节对齐。
+\end{exampleblock}
+\end{frame}
+
+\begin{frame}{BMP 头部中的关键字段}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{2.7cm} >{\raggedright\arraybackslash}p{2.4cm} >{\raggedright\arraybackslash}p{5.6cm}}
+\toprule
+字段 & 所在结构体 & 含义 \\
+\midrule
+\texttt{bfType} & 文件头 & 文件标记，BMP 通常为 \texttt{'BM'} \\
+\texttt{bfSize} & 文件头 & 整个文件的总字节数 \\
+\texttt{bfOffBits} & 文件头 & 像素数据相对文件开头的偏移量 \\
+\texttt{biWidth} & 信息头 & 图像宽度（像素） \\
+\texttt{biHeight} & 信息头 & 图像高度（像素）；正值常表示自底向上存储 \\
+\texttt{biBitCount} & 信息头 & 每个像素使用多少位；24 表示 3 字节真彩色 \\
+\texttt{biCompression} & 信息头 & 压缩方式；0 表示不压缩 \\
+\texttt{biSizeImage} & 信息头 & 像素数据区总字节数 \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\begin{frame}{为什么 BMP 每行要补齐到 4 字节}
+对于 24 位 BMP：
+\[
+\text{每行原始字节数} = 3 \times \text{宽度}
+\]
+
+但 BMP 规定：\alert{每一行在文件中必须按 4 字节对齐}。
+
+因此：
+\[
+\text{padding} = (4 - (3w \bmod 4)) \bmod 4
+\]
+
+\begin{itemize}
+  \item 若宽度为 1920，则 $1920\times 3 = 5760$，已经是 4 的倍数，不需要补齐。
+  \item 若宽度为 3，则每行 9 字节，需要再补 3 个字节，凑成 12 字节。
+\end{itemize}
+
+\begin{block}{意义}
+补齐不改变图像内容，只是为了满足 BMP 文件格式对行存储的要求。
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]{本程序的 C 语言实现思路}
+程序的主要步骤如下：
+\begin{enumerate}
+  \item 检查参数是否合法
+  \item 计算每行字节数和补齐字节数
+  \item 填写 \texttt{BITMAPFILEHEADER}
+  \item 填写 \texttt{BITMAPINFOHEADER}
+  \item 用 \texttt{fwrite} 依次写入头部和像素数据
+\end{enumerate}
+
+\begin{lstlisting}
+file_header.bfType = 0x4D42;
+info_header.biWidth = w;
+info_header.biHeight = h;
+info_header.biBitCount = 24;
+info_header.biCompression = 0;
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{按行倒序写出像素数据}
+当 \texttt{biHeight > 0} 时，BMP 文件中的第一行对应图像的\textbf{最底下一行}。
+
+因此，如果内存中的图像是按“从上到下”排列，写文件时就需要倒序：
+
+\begin{lstlisting}
+for (y = h - 1; y >= 0; --y)
+{
+    const unsigned char *row = image + y * row_size_no_pad;
+    fwrite(row, 1, row_size_no_pad, fp);
+    fwrite(pad, 1, padding, fp);
+}
+\end{lstlisting}
+
+\begin{alertblock}{程序设计要点}
+这里体现了 C 语言处理二进制文件的典型方式：\textbf{明确数据结构、精确控制字节布局、逐步写入文件}。
+\end{alertblock}
+\end{frame}
+
+
+
+\section{注释和 Doxygen}
+
+\begin{frame}{没有文档时会遇到什么问题}
+对于一个 C 项目，代码能编译通过并不代表它容易理解。
+
+常见问题：
+\begin{itemize}
+  \item 接口的参数和返回值意义不清楚；
+  \item 结构体字段很多，阅读成本高；
+  \item 实现文件里有大量细节，但使用者只想知道“怎么调用”；
+  \item 测试程序能跑，但别人不容易看出它在验证什么。
+\end{itemize}
+
+\vspace{0.5em}
+Doxygen 的核心作用就是：
+
+\begin{block}{一句话理解}
+把源码中的“结构化注释”自动整理成可浏览、可检索、可交叉跳转的文档。
+\end{block}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Doxygen 的工作流程}
+Doxygen 的基本流程可以概括为：
+
+\[
+\text{源码} + \text{结构化注释} + \text{Doxyfile}
+\longrightarrow
+\text{HTML / LaTeX / 其他格式文档}
+\]
+
+\vspace{0.5em}
+典型步骤：
+\begin{enumerate}
+  \item 生成配置文件：\texttt{doxygen -g Doxyfile}
+  \item 修改配置项，例如输入目录、输出语言、是否递归扫描
+  \item 在代码中加入 Doxygen 风格注释
+  \item 运行：\texttt{doxygen Doxyfile}
+  \item 查看生成的 HTML 或进一步编译 LaTeX 文档
+\end{enumerate}
+\end{frame}
+
+%================================================
+\section{Doxygen 的基本使用方式}
+
+\begin{frame}[fragile]{安装与第一次运行}
+命令行最常见的起步方式：
+
+\begin{lstlisting}[language=bash]
+# 生成默认配置文件
+doxygen -g Doxyfile
+
+# 根据配置文件生成文档
+doxygen Doxyfile
+\end{lstlisting}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item \texttt{doxygen} 是主程序；
+  \item 不带参数时，会尝试读取当前目录下的 \texttt{Doxyfile}；
+  \item 也可以使用图形界面工具 \texttt{doxywizard} 来编辑配置并运行。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{最重要的 Doxyfile 配置项}
+初学者最常改的配置项通常只有少数几个：
+
+\begin{lstlisting}
+PROJECT_NAME           = "BMP Demo"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = bitmap.h bitmap.c bitmap_test.c
+RECURSIVE              = NO
+GENERATE_HTML          = YES
+GENERATE_LATEX         = YES
+OUTPUT_LANGUAGE        = Chinese
+EXTRACT_ALL            = YES
+\end{lstlisting}
+
+\vspace{0.5em}
+解释：
+\begin{itemize}
+  \item \texttt{INPUT} 指定要扫描的源文件；
+  \item \texttt{OUTPUT\_LANGUAGE} 可设为中文；
+  \item \texttt{EXTRACT\_ALL=YES} 可以在注释不全时也尽量抽取实体；
+  \item \texttt{GENERATE\_HTML/GENERATE\_LATEX} 决定输出格式。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{输出结果长什么样}
+Doxygen 常见输出有两类：
+
+\begin{itemize}
+  \item \textbf{HTML 文档}：最适合日常浏览；
+  \item \textbf{LaTeX 文档}：适合进一步生成 PDF。
+\end{itemize}
+
+\vspace{0.5em}
+对 C 项目来说，HTML 通常会自动建立这些导航关系：
+\begin{itemize}
+  \item 文件列表；
+  \item 结构体列表；
+  \item 函数索引；
+  \item 交叉引用与跳转链接。
+\end{itemize}
+
+\vspace{0.5em}
+因此，读者可以从 \texttt{build\_bmp} 直接跳到其声明、定义、参数说明和调用位置。
+\end{frame}
+
+%================================================
+\section{Doxygen 注释的基本写法}
+
+\begin{frame}[fragile]{最常见的注释块形式}
+对 C/C++ 代码，Doxygen 支持多种“特殊注释块”。
+
+最常见的是：
+
+\begin{lstlisting}
+/**
+ * 这是一个 Doxygen 注释块
+ */
+\end{lstlisting}
+
+或
+
+\begin{lstlisting}
+/*!
+ * 这也是一个 Doxygen 注释块
+ */
+\end{lstlisting}
+
+也可以写成行注释形式：
+
+\begin{lstlisting}
+/// 这是单行 Doxygen 注释
+\end{lstlisting}
+
+\vspace{0.5em}
+建议初学者统一使用 \texttt{/** ... */} 风格，最稳定，也最容易阅读。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{常用标签}
+最常用的几个标签如下：
+
+\begin{lstlisting}
+/**
+ * @brief 简短说明
+ * @param file 输出文件名
+ * @param w    图像宽度
+ * @param h    图像高度
+ * @param image 像素数据
+ * @return 0 表示成功，负值表示失败
+ */
+\end{lstlisting}
+
+\vspace{0.5em}
+常见标签含义：
+\begin{itemize}
+  \item \texttt{@brief}：摘要；
+  \item \texttt{@param}：参数说明；
+  \item \texttt{@return}：返回值说明；
+  \item \texttt{@file}：文件说明；
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{注释的原则}
+写 Doxygen 注释时，不要把它当成“把代码再重复一遍”。
+
+更好的做法是写出下面这些信息：
+\begin{itemize}
+  \item 这个实体的职责是什么；
+  \item 调用者需要满足什么前提；
+  \item 参数在语义上分别代表什么；
+  \item 返回值如何判断；
+  \item 有哪些容易出错的边界条件。
+\end{itemize}
+
+\vspace{0.5em}
+也就是说：
+
+\begin{block}{核心原则}
+文档应解释“接口语义”，而不只是复述“语法形式”。
+\end{block}
+\end{frame}
+
+%================================================
+\section{结合 bitmap.h 讲结构体与接口文档}
+
+\begin{frame}{为什么先看头文件}
+在 C 项目中，头文件往往最适合做“文档入口”。
+
+因为头文件通常集中放置：
+\begin{itemize}
+  \item 类型定义；
+  \item 宏定义；
+  \item 结构体；
+  \item 函数声明；
+  \item 对外接口约定。
+\end{itemize}
+
+\vspace{0.5em}
+在本例中，\texttt{bitmap.h} 中既有定长整数别名，也有 BMP 文件头结构，还声明了 \texttt{build\_bmp} 接口，因此非常适合作为 Doxygen 的主要展示对象。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{为头文件写文件级注释}
+建议在 \texttt{bitmap.h} 开头加入文件级注释：
+
+\begin{lstlisting}
+/**
+ * @file bitmap.h
+ * @brief BMP 文件格式相关的数据结构与接口声明
+ *
+ * 本文件定义了：
+ * 1. BMP 文件头结构
+ * 2. BMP 信息头结构
+ * 3. build_bmp() 接口
+ */
+\end{lstlisting}
+
+这样生成的文档中，文件页面会先出现一个清晰的总说明。
+\end{frame}
+
+
+%------------------------------------------------
+\begin{frame}[fragile]{为函数声明写文档：build\_bmp}
+头文件里的函数声明尤其适合写“面向使用者”的文档：
+
+\begin{lstlisting}
+/**
+ * @brief 根据原始像素数据生成 24 位无压缩 BMP 文件
+ * @param file 输出文件名
+ * @param w 图像宽度（像素）
+ * @param h 图像高度（像素）
+ * @param image 像素数组首地址，按 BGR 顺序存储
+ * @return 0 表示成功；
+ *         -1 表示参数错误；
+ *         -2 表示文件打开失败；
+ *         -3 表示文件写入失败
+ */
+int build_bmp(const char *file, int w, int h,
+              const unsigned char *image);
+\end{lstlisting}
+
+注意：这里写的是“如何调用”，不是“如何实现”。
+\end{frame}
+
+\begin{frame}[fragile]{头文件：\texttt{bitmap.h}}
+头文件的作用是“\alert{声明接口}”，告诉编译器：
+\begin{itemize}
+  \item 有哪些类型可以使用
+  \item 有哪些结构体
+  \item 有哪些函数可以调用
+\end{itemize}
+
+\begin{block}{本例中的关键声明}
+\begin{verbatim}
+int build_bmp(const char *file, int w, int h,
+              const unsigned char *image);
+\end{verbatim}
+\end{block}
+
+\begin{itemize}
+  \item 它只说明“怎么用”
+  \item 它不包含真正的函数实现代码
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{实现文件：\texttt{bitmap.c}}
+\texttt{bitmap.c} 中真正定义了：
+\begin{verbatim}
+int build_bmp(const char *file, int w, int h,
+              const unsigned char *image)
+\end{verbatim}
+
+\vspace{0.4em}
+这个函数完成的工作包括：
+\begin{itemize}
+  \item 检查参数是否合法
+  \item 打开输出文件
+  \item 填写 BMP 文件头和信息头
+  \item 按 BMP 格式写入像素数据
+  \item 关闭文件并返回结果
+\end{itemize}
+
+因此，\texttt{.c} 文件是功能的\alert{具体实现}。
+\end{frame}
+
+\begin{frame}[fragile]{用户程序：\texttt{bitmap\_test\_change.c}}
+调用者程序先包含头文件：
+\begin{verbatim}
+#include "bitmap.h"
+\end{verbatim}
+
+然后在代码中直接调用：
+\begin{verbatim}
+ret = build_bmp("test.bmp", w, h, image);
+\end{verbatim}
+
+\vspace{0.5em}
+说明：
+\begin{itemize}
+  \item 头文件让编译器知道这个函数“存在”
+  \item 真正执行时，函数实现来自 \texttt{bitmap.c} 或对应的库文件
+\end{itemize}
+\end{frame}
+
+\begin{frame}{什么是库文件}
+广义上，库就是一组可复用的代码。
+
+\vspace{0.5em}
+在这个例子里，\texttt{bitmap} 就可以看成一个小型库：
+\begin{itemize}
+  \item \texttt{bitmap.h}：对外公开接口
+  \item \texttt{bitmap.c}：内部实现代码
+\end{itemize}
+
+通常在工程中，库不会直接以 \texttt{.c} 形式给别人用，而会先编译成：
+\begin{itemize}
+  \item \alert{静态库}：\texttt{libbitmap.a}
+  \item \alert{动态库}：\texttt{libbitmap.so}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{三者的区别}
+\begin{tabular}{p{2.3cm}p{3.2cm}p{5.2cm}}
+\textbf{形式} & \textbf{作用} & \textbf{特点} \\\hline
+头文件 \texttt{.h} & 声明接口 & 给编译器看；说明函数、类型、结构体怎么使用 \\
+静态库 \texttt{.a} & 提供已编译实现 & 在链接阶段拷入可执行文件；运行时通常不再依赖库文件 \\
+动态库 \texttt{.so} & 提供已编译实现 & 运行时由系统装载；多个程序可共享同一份库 \\
+\end{tabular}
+
+\vspace{0.7em}
+一句话总结：
+\begin{block}{核心区别}
+头文件负责“声明”；静态库和动态库负责“实现”。
+\end{block}
+\end{frame}
+
+\begin{frame}[fragile]{方式一：直接与源文件一起编译}
+最原始的做法是直接把两个 \texttt{.c} 文件一起编译：
+\begin{verbatim}
+gcc bitmap.c bitmap_test_change.c -o test
+\end{verbatim}
+
+特点：
+\begin{itemize}
+  \item 没有单独生成库
+  \item 相当于“把库源码和用户程序一起编译”
+  \item 适合小例子或初学阶段
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{方式二：做成静态库}
+\textbf{步骤 1：}编译实现文件
+\begin{verbatim}
+gcc -c bitmap.c -o bitmap.o
+\end{verbatim}
+
+\textbf{步骤 2：}打包成静态库
+\begin{verbatim}
+ar rcs libbitmap.a bitmap.o
+\end{verbatim}
+
+\textbf{步骤 3：}编译用户程序并链接
+\begin{verbatim}
+gcc bitmap_test_change.c -L. -lbitmap -o test_static
+\end{verbatim}
+
+特点：
+\begin{itemize}
+  \item 链接时把需要的库代码并入可执行文件
+  \item 生成的程序更独立，但体积通常更大
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{方式三：做成动态库}
+\textbf{步骤 1：}生成位置无关代码
+\begin{verbatim}
+gcc -fPIC -c bitmap.c -o bitmap.o
+\end{verbatim}
+
+\textbf{步骤 2：}生成动态库
+\begin{verbatim}
+gcc -shared bitmap.o -o libbitmap.so
+\end{verbatim}
+
+\textbf{步骤 3：}链接用户程序
+\begin{verbatim}
+gcc bitmap_test_change.c -L. -lbitmap -o test_shared
+\end{verbatim}
+
+\textbf{步骤 4：}运行时找到动态库
+\begin{verbatim}
+export LD_LIBRARY_PATH=.
+./test_shared
+\end{verbatim}
+
+特点：程序更小；多个程序可共享同一个 \texttt{.so}。
+\end{frame}
+
+\begin{frame}{调用方式其实没有变}
+无论使用的是：
+\begin{itemize}
+  \item 源文件
+  \item 静态库
+  \item 动态库
+\end{itemize}
+
+在 C 代码里的调用方式都基本相同：
+\begin{itemize}
+  \item 先 \texttt{\#include "bitmap.h"}
+  \item 再直接调用 \texttt{build\_bmp(...)}
+\end{itemize}
+
+真正变化的是：
+\begin{block}{差别所在}
+差别主要不在“写代码怎么调用”，而在“编译、链接和运行时怎样装载实现”。
+\end{block}
+\end{frame}
+
+\begin{frame}{最后的总结}
+\begin{enumerate}
+  \item 头文件（\texttt{.h}）负责声明接口
+  \item 实现文件（\texttt{.c}）负责写出函数功能
+  \item 静态库（\texttt{.a}）在链接时并入程序
+  \item 动态库（\texttt{.so}）在运行时装载
+  \item 代码中的调用方式通常不变，变化的是构建方式
+\end{enumerate}
+
+\vspace{0.8em}
+\begin{alertblock}{最核心的一句话}
+头文件负责“声明”，库文件负责“实现”；
+静态库在链接时装入，动态库在运行时装入。
+\end{alertblock}
+\end{frame}
+
+
+
+\end{document}
