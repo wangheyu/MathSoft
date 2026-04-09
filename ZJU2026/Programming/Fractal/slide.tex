@@ -1,0 +1,256 @@
+\documentclass[UTF8]{ctexbeamer}
+
+\usepackage{amsmath, amssymb, bm}
+\usepackage{hyperref}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+
+\title{Mandelbrot 集简介}
+\author{}
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Mandelbrot 集是什么？}
+\begin{itemize}
+    \item Mandelbrot 集（曼德勃罗集）是复动力系统中的一个经典分形对象。
+    \item 它由如下迭代过程定义：
+    \[
+        z_{n+1} = z_n^2 + c
+    \]
+    其中：
+    \begin{itemize}
+        \item \(c \in \mathbb{C}\) 是一个固定的复数参数；
+        \item \(z_0 = 0\)；
+        \item 然后不断迭代生成 \(z_1, z_2, z_3, \dots\)
+    \end{itemize}
+    \item 对每一个复数 \(c\)，观察这个数列是否始终有界。
+\end{itemize}
+
+\medskip
+\textbf{定义：}
+\[
+M = \left\{ c \in \mathbb{C} \;\middle|\; \{z_n\}_{n=0}^{\infty} \text{ 在 } z_0=0,\ z_{n+1}=z_n^2+c \text{ 下有界} \right\}
+\]
+这就是 \textbf{Mandelbrot 集}。
+\end{frame}
+
+\begin{frame}{为什么它是“集合”？}
+\begin{itemize}
+    \item 这里真正变化的不是 \(z_0\)，而是参数 \(c\)。
+    \item 每取一个复数 \(c\)，就得到一条轨道：
+    \[
+    0,\quad c,\quad c^2+c,\quad (c^2+c)^2+c,\quad \dots
+    \]
+    \item 如果这条轨道不会无限发散，那么这个 \(c\) 就属于 Mandelbrot 集。
+    \item 因此，Mandelbrot 集本质上是复平面上的一个点集：
+    \begin{itemize}
+        \item 横轴表示 \(\operatorname{Re}(c)\)；
+        \item 纵轴表示 \(\operatorname{Im}(c)\)。
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{生成 Mandelbrot 集的核心思想}
+对复平面上的每一个点 \(c=x+iy\)，执行以下步骤：
+
+\begin{enumerate}
+    \item 令初值 \(z_0 = 0\)；
+    \item 按照递推公式
+    \[
+        z_{n+1}=z_n^2+c
+    \]
+    反复计算；
+    \item 在计算过程中检查 \(|z_n|\) 是否超过阈值；
+    \item 若很快超过阈值，则认为该点 \(c\) 不属于 Mandelbrot 集；
+    \item 若迭代很多次后仍未超过阈值，则认为该点大概率属于 Mandelbrot 集。
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{为什么只需检查 \texorpdfstring{\(|z_n|>2\)}{|z_n| > 2}？}
+对于迭代
+\[
+z_{n+1}=z_n^2+c,
+\]
+有一个重要结论：
+
+\medskip
+\textbf{逃逸判据：}
+如果某一步出现
+\[
+|z_n|>2,
+\]
+那么后续迭代将趋于无穷大。
+
+\medskip
+因此：
+\begin{itemize}
+    \item 一旦 \(|z_n|>2\)，就可以立刻停止；
+    \item 该参数 \(c\) 不属于 Mandelbrot 集。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{详细生成规则（数学版）}
+设要绘制的复平面区域为
+\[
+x \in [x_{\min}, x_{\max}], \qquad
+y \in [y_{\min}, y_{\max}].
+\]
+
+对每个像素点 \((i,j)\)，做如下映射：
+\[
+c = x + iy,
+\]
+其中
+\[
+x = x_{\min} + \frac{i}{W-1}(x_{\max}-x_{\min}),
+\qquad
+y = y_{\min} + \frac{j}{H-1}(y_{\max}-y_{\min}).
+\]
+
+然后定义：
+\[
+z_0 = 0,
+\qquad
+z_{n+1}=z_n^2+c.
+\]
+
+给定最大迭代次数 \(N_{\max}\)：
+\begin{itemize}
+    \item 若存在最小整数 \(n\le N_{\max}\)，使得 \(|z_n|>2\)，则该点逃逸；
+    \item 若对所有 \(0\le n\le N_{\max}\) 都有 \(|z_n|\le 2\)，则把该点视为集合内部点。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{详细生成规则（算法版）}
+\textbf{输入：}
+\begin{itemize}
+    \item 图像宽度 \(W\)、高度 \(H\)
+    \item 复平面窗口 \([x_{\min},x_{\max}] \times [y_{\min},y_{\max}]\)
+    \item 最大迭代次数 \(N_{\max}\)
+\end{itemize}
+
+\textbf{对每个像素：}
+\begin{enumerate}
+    \item 由像素坐标计算复数 \(c\)；
+    \item 初始化 \(z \leftarrow 0\)，\(n \leftarrow 0\)；
+    \item 当 \(n < N_{\max}\) 且 \(|z| \le 2\) 时：
+    \[
+    z \leftarrow z^2 + c,\qquad n \leftarrow n+1
+    \]
+    \item 记录该点的迭代次数 \(n\)。
+\end{enumerate}
+
+\textbf{输出：}
+\begin{itemize}
+    \item 若 \(n=N_{\max}\)，通常画成黑色；
+    \item 若 \(n<N_{\max}\)，按 \(n\) 的大小着色。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{颜色是如何确定的？}
+设某点在第 \(n\) 次迭代第一次满足
+\[
+|z_n|>2.
+\]
+则可以用 \(n\) 决定颜色：
+
+\begin{itemize}
+    \item \(n\) 小：逃逸快；
+    \item \(n\) 大：更接近边界；
+    \item \(n=N_{\max}\)：通常视为未逃逸，画成黑色。
+\end{itemize}
+
+\medskip
+因此，Mandelbrot 集内部通常显示为黑色，外部根据逃逸次数形成彩色层次。
+\end{frame}
+
+\begin{frame}{一个具体例子}
+考虑参数
+\[
+c=1.
+\]
+从 \(z_0=0\) 开始迭代：
+\[
+z_1=1,\qquad z_2=2,\qquad z_3=5.
+\]
+于是
+\[
+|z_3|=5>2,
+\]
+所以轨道发散，故
+\[
+1 \notin M.
+\]
+
+\medskip
+再考虑
+\[
+c=0.
+\]
+则
+\[
+z_0=0,\quad z_1=0,\quad z_2=0,\quad \dots
+\]
+始终有界，所以
+\[
+0 \in M.
+\]
+\end{frame}
+
+\begin{frame}{为什么边界如此复杂？}
+\begin{itemize}
+    \item Mandelbrot 集由非常简单的迭代规则定义：
+    \[
+    z_{n+1}=z_n^2+c
+    \]
+    \item 但在参数空间中，它会产生极其复杂的边界；
+    \item 边界附近对参数 \(c\) 的微小变化非常敏感；
+    \item 这正是分形几何中“简单规则产生复杂结构”的典型现象。
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{伪代码}
+\small
+\begin{block}{Mandelbrot 集生成伪代码}
+\begin{verbatim}
+for each pixel (i, j):
+    c = map_pixel_to_complex(i, j)
+    z = 0
+    n = 0
+
+    while n < Nmax and |z| <= 2:
+        z = z*z + c
+        n = n + 1
+
+    if n == Nmax:
+        color = black
+    else:
+        color = palette(n)
+\end{verbatim}
+\end{block}
+
+\begin{itemize}
+    \item \texttt{map\_pixel\_to\_complex}：把像素映射到复平面；
+    \item \texttt{palette(n)}：根据逃逸次数选择颜色。
+\end{itemize}
+\end{frame}
+
+\begin{frame}{总结}
+\begin{itemize}
+    \item Mandelbrot 集由
+    \[
+    z_{n+1}=z_n^2+c,\qquad z_0=0
+    \]
+    定义；
+    \item 参数 \(c\) 是否属于集合，取决于对应轨道是否有界；
+    \item 数值绘制时，使用逃逸判据 \(|z_n|>2\)；
+    \item 实际绘图流程包括：像素映射、迭代计算、逃逸判断和按次数着色。
+\end{itemize}
+\end{frame}
+
+\end{document}
