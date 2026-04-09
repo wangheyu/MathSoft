@@ -641,101 +641,121 @@ ret = build_bmp("test.bmp", w, h, image);
 \end{itemize}
 \end{frame}
 
-\begin{frame}{什么是库文件}
-广义上，库就是一组可复用的代码。
+\begin{frame}{问题背景：为什么把 \texttt{bitmap.c} 做成库？}
+\begin{itemize}
+  \item 假设我们已经写好了 \texttt{bitmap.c} 和 \texttt{bitmap.h}，里面提供 BMP 图像读写函数。
+  \item 如果多个程序都要调用这些函数，把它们做成\alert{库}会更方便复用。
+  \item 常见两种库：
+  \begin{itemize}
+    \item \textbf{静态库（static library）}：文件通常是 \texttt{libbitmap.a}
+    \item \textbf{动态库（shared library）}：文件通常是 \texttt{libbitmap.so}
+  \end{itemize}
+  \item 都可以让 \texttt{main.c} 通过
+  \begin{center}
+    \texttt{\#include "bitmap.h"}
+  \end{center}
+  来使用库中函数。
+\end{itemize}
 
 \vspace{0.5em}
-在这个例子里，\texttt{bitmap} 就可以看成一个小型库：
-\begin{itemize}
-  \item \texttt{bitmap.h}：对外公开接口
-  \item \texttt{bitmap.c}：内部实现代码
-\end{itemize}
-
-通常在工程中，库不会直接以 \texttt{.c} 形式给别人用，而会先编译成：
-\begin{itemize}
-  \item \alert{静态库}：\texttt{libbitmap.a}
-  \item \alert{动态库}：\texttt{libbitmap.so}
-\end{itemize}
+\textbf{典型目录：}
+\begin{center}
+\texttt{bitmap.c \quad bitmap.h \quad main.c}
+\end{center}
 \end{frame}
 
-\begin{frame}{三者的区别}
-\begin{tabular}{p{2.3cm}p{3.2cm}p{5.2cm}}
-\textbf{形式} & \textbf{作用} & \textbf{特点} \\\hline
-头文件 \texttt{.h} & 声明接口 & 给编译器看；说明函数、类型、结构体怎么使用 \\
-静态库 \texttt{.a} & 提供已编译实现 & 在链接阶段拷入可执行文件；运行时通常不再依赖库文件 \\
-动态库 \texttt{.so} & 提供已编译实现 & 运行时由系统装载；多个程序可共享同一份库 \\
-\end{tabular}
-
-\vspace{0.7em}
-一句话总结：
-\begin{block}{核心区别}
-头文件负责“声明”；静态库和动态库负责“实现”。
-\end{block}
-\end{frame}
-
-\begin{frame}[fragile]{方式一：直接与源文件一起编译}
-最原始的做法是直接把两个 \texttt{.c} 文件一起编译：
-\begin{verbatim}
-gcc bitmap.c bitmap_test_change.c -o test
-\end{verbatim}
-
-特点：
-\begin{itemize}
-  \item 没有单独生成库
-  \item 相当于“把库源码和用户程序一起编译”
-  \item 适合小例子或初学阶段
-\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{方式二：做成静态库}
-\textbf{步骤 1：}编译实现文件
-\begin{verbatim}
+\begin{frame}[fragile]{把 \texttt{bitmap.c} 编译成静态库}
+\textbf{步骤 1：先编译成目标文件}
+\begin{lstlisting}[language=bash]
 gcc -c bitmap.c -o bitmap.o
-\end{verbatim}
+\end{lstlisting}
 
-\textbf{步骤 2：}打包成静态库
-\begin{verbatim}
+\textbf{步骤 2：打包成静态库}
+\begin{lstlisting}[language=bash]
 ar rcs libbitmap.a bitmap.o
-\end{verbatim}
+\end{lstlisting}
 
-\textbf{步骤 3：}编译用户程序并链接
-\begin{verbatim}
-gcc bitmap_test_change.c -L. -lbitmap -o test_static
-\end{verbatim}
-
-特点：
+\textbf{结果：}
 \begin{itemize}
-  \item 链接时把需要的库代码并入可执行文件
-  \item 生成的程序更独立，但体积通常更大
+  \item 生成文件 \texttt{libbitmap.a}
+  \item 链接时，库中的目标代码会被复制进最终可执行文件
+\end{itemize}
+
+\textbf{使用示例：}
+\begin{lstlisting}[language=bash]
+gcc main.c ./libbitmap.a -o app_static
+./app_static
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{把 \texttt{bitmap.c} 编译成动态库}
+\textbf{步骤 1：生成位置无关代码（PIC）}
+\begin{lstlisting}[language=bash]
+gcc -fPIC -c bitmap.c -o bitmap_pic.o
+\end{lstlisting}
+
+\textbf{步骤 2：链接成共享库}
+\begin{lstlisting}[language=bash]
+gcc -shared bitmap_pic.o -o libbitmap.so
+\end{lstlisting}
+
+\textbf{使用示例：}
+\begin{lstlisting}[language=bash]
+gcc main.c -L. -lbitmap -Wl,-rpath=. -o app_shared
+./app_shared
+\end{lstlisting}
+
+\textbf{说明：}
+\begin{itemize}
+  \item \texttt{-fPIC}：让代码可被装载到任意内存位置
+  \item \texttt{-shared}：生成共享库 \texttt{.so}
+  \item 运行时程序需要能找到 \texttt{libbitmap.so}
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{方式三：做成动态库}
-\textbf{步骤 1：}生成位置无关代码
-\begin{verbatim}
-gcc -fPIC -c bitmap.c -o bitmap.o
-\end{verbatim}
+\begin{frame}{静态库与动态库的区别}
+\small
+\begin{center}
+\begin{tabular}{p{2.6cm}p{4.2cm}p{4.2cm}}
+\toprule
+比较项 & 静态库 \texttt{libbitmap.a} & 动态库 \texttt{libbitmap.so} \\
+\midrule
+链接时机 & 编译/链接阶段把代码并入程序 & 运行时装载共享库 \\
+可执行文件大小 & 较大 & 较小 \\
+运行依赖 & 一般不依赖外部库文件 & 依赖系统能找到 \texttt{.so} \\
+升级方式 & 重新链接应用程序 & 替换共享库即可（需兼容） \\
+适合场景 & 部署简单、单文件发布 & 多程序共享、节省磁盘和内存 \\
+\bottomrule
+\end{tabular}
+\end{center}
 
-\textbf{步骤 2：}生成动态库
-\begin{verbatim}
-gcc -shared bitmap.o -o libbitmap.so
-\end{verbatim}
-
-\textbf{步骤 3：}链接用户程序
-\begin{verbatim}
-gcc bitmap_test_change.c -L. -lbitmap -o test_shared
-\end{verbatim}
-
-\textbf{步骤 4：}运行时找到动态库
-\begin{verbatim}
-export LD_LIBRARY_PATH=.
-./test_shared
-\end{verbatim}
-
-特点：程序更小；多个程序可共享同一个 \texttt{.so}。
+\vspace{0.6em}
+\textbf{一句话理解：}
+\begin{itemize}
+  \item 静态库：\alert{把库代码打包进程序}
+  \item 动态库：\alert{程序运行时再去加载库}
+\end{itemize}
 \end{frame}
 
-\begin{frame}{调用方式其实没有变}
+
+\begin{frame}[fragile]{完整命令总结}
+\textbf{静态库：}
+\begin{lstlisting}[language=bash]
+gcc -c bitmap.c -o bitmap.o
+ar rcs libbitmap.a bitmap.o
+gcc main.c ./libbitmap.a -o app_static
+\end{lstlisting}
+
+\textbf{动态库：}
+\begin{lstlisting}[language=bash]
+gcc -fPIC -c bitmap.c -o bitmap_pic.o
+gcc -shared bitmap_pic.o -o libbitmap.so
+gcc main.c -L. -lbitmap -Wl,-rpath=. -o app_shared
+\end{lstlisting}
+\end{frame}
+
+
+\begin{frame}[fragile]{调用方式其实没有变}
 无论使用的是：
 \begin{itemize}
   \item 源文件
@@ -771,6 +791,53 @@ export LD_LIBRARY_PATH=.
 \end{alertblock}
 \end{frame}
 
+\begin{frame}[fragile]{同名动态库和静态库同时存在时}
+如果目录中同时有：
+\begin{center}
+\texttt{libbitmap.a \quad 和 \quad libbitmap.so}
+\end{center}
 
+那么命令
+\begin{lstlisting}[language=bash]
+gcc main.c -L. -lbitmap -o app
+\end{lstlisting}
+通常会\alert{优先链接动态库 \texttt{libbitmap.so}}。
+
+\vspace{0.5em}
+\textbf{若要明确链接静态库，可直接写静态库文件名：}
+\begin{lstlisting}[language=bash]
+gcc main.c ./libbitmap.a -o app_static
+\end{lstlisting}
+
+\vspace{0.4em}
+也可以用链接器选项：
+\begin{lstlisting}[language=bash]
+gcc main.c -L. -Wl,-Bstatic -lbitmap \
+    -Wl,-Bdynamic -o app_static
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{同名动态库和静态库同时存在时}
+\textbf{若要明确链接动态库，可写：}
+\begin{lstlisting}[language=bash]
+gcc main.c ./libbitmap.so -o app_shared
+\end{lstlisting}
+
+\vspace{0.5em}
+在很多 Linux 环境中，若使用
+\begin{lstlisting}[language=bash]
+gcc main.c -L. -lbitmap -o app
+\end{lstlisting}
+并且当前目录下同时存在 \texttt{.so} 和 \texttt{.a}，
+通常也会优先选择动态库。
+
+\vspace{0.5em}
+\textbf{验证方法：}
+\begin{lstlisting}[language=bash]
+ldd app_shared
+\end{lstlisting}
+
+若输出中出现 \texttt{libbitmap.so}，说明程序确实使用了动态库。
+\end{frame}
 
 \end{document}
