@@ -1,6 +1,3 @@
-import ctypes
-import os
-import sys
 import tkinter as tk
 from dataclasses import dataclass
 
@@ -10,9 +7,6 @@ from PIL import Image, ImageTk
 
 @dataclass
 class Viewport:
-    """
-    表示当前复平面中的观察区域。
-    """
     xmin: float
     xmax: float
     ymin: float
@@ -25,39 +19,21 @@ class Viewport:
         return self.ymax - self.ymin
 
     def pixel_to_complex(self, px: int, py: int, screen_w: int, screen_h: int) -> complex:
-        """
-        将屏幕像素坐标映射到复平面点。
-        """
-        if screen_w <= 1:
-            x = self.xmin
-        else:
-            x = self.xmin + (px / (screen_w - 1)) * self.width()
-
-        if screen_h <= 1:
-            y = self.ymax
-        else:
-            y = self.ymax - (py / (screen_h - 1)) * self.height()
-
+        x = self.xmin + (px / (screen_w - 1)) * self.width()
+        y = self.ymax - (py / (screen_h - 1)) * self.height()
         return complex(x, y)
 
     def recenter_and_zoom(self, cx: float, cy: float, factor: float) -> "Viewport":
-        """
-        以 (cx, cy) 为中心缩放。
-        factor < 1 表示放大，factor > 1 表示缩小。
-        """
         new_w = self.width() * factor
         new_h = self.height() * factor
         return Viewport(
-            xmin=cx - new_w / 2.0,
-            xmax=cx + new_w / 2.0,
-            ymin=cy - new_h / 2.0,
-            ymax=cy + new_h / 2.0,
+            xmin=cx - new_w / 2,
+            xmax=cx + new_w / 2,
+            ymin=cy - new_h / 2,
+            ymax=cy + new_h / 2,
         )
 
     def translate(self, dx: float, dy: float) -> "Viewport":
-        """
-        平移视野。
-        """
         return Viewport(
             xmin=self.xmin + dx,
             xmax=self.xmax + dx,
@@ -66,79 +42,38 @@ class Viewport:
         )
 
 
-class MandelbrotCLibrary:
-    """
-    对 C 动态库进行简单封装。
-    """
-
-    def __init__(self, lib_path: str):
-        self.lib = ctypes.CDLL(lib_path)
-
-        self.lib.mandelbrot_escape_counts.argtypes = [
-            ctypes.c_int,      # width
-            ctypes.c_int,      # height
-            ctypes.c_double,   # xmin
-            ctypes.c_double,   # xmax
-            ctypes.c_double,   # ymin
-            ctypes.c_double,   # ymax
-            ctypes.c_int,      # max_iter
-            ctypes.POINTER(ctypes.c_int),  # output
-        ]
-        self.lib.mandelbrot_escape_counts.restype = None
-
-    def compute_escape_counts(self, width: int, height: int,
-                              xmin: float, xmax: float,
-                              ymin: float, ymax: float,
-                              max_iter: int) -> np.ndarray:
-        """
-        调用 C 函数，返回 shape = (height, width) 的 int32 数组。
-        """
-        counts = np.zeros(width * height, dtype=np.int32)
-
-        self.lib.mandelbrot_escape_counts(
-            width,
-            height,
-            xmin,
-            xmax,
-            ymin,
-            ymax,
-            max_iter,
-            counts.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
-        )
-
-        return counts.reshape((height, width))
-
-
 class MandelbrotRenderer:
-    """
-    使用 C 动态库计算逃逸次数，再由 Python 完成着色。
-    """
-
-    def __init__(self, width: int, height: int, lib_path: str, max_iter: int = 200):
+    def __init__(self, width: int, height: int, max_iter: int = 200):
         self.width = width
         self.height = height
         self.max_iter = max_iter
-        self.c_lib = MandelbrotCLibrary(lib_path)
 
-    def compute_escape_counts(self, viewport: Viewport) -> np.ndarray:
-        return self.c_lib.compute_escape_counts(
-            self.width,
-            self.height,
-            viewport.xmin,
-            viewport.xmax,
-            viewport.ymin,
-            viewport.ymax,
-            self.max_iter,
-        )
+    def compute_escape_counts(self, viewport: Viewport):
+        xs = np.linspace(viewport.xmin, viewport.xmax, self.width, dtype=np.float64)
+        ys = np.linspace(viewport.ymax, viewport.ymin, self.height, dtype=np.float64)
+        X, Y = np.meshgrid(xs, ys)
+        C = X + 1j * Y
 
-    def colorize(self, counts: np.ndarray) -> np.ndarray:
-        """
-        根据逃逸次数着色。
-        集内部显示为黑色，外部使用平滑色带。
-        返回 shape=(height, width, 3) 的 uint8 RGB 数组。
-        """
-        counts_f = counts.astype(np.float64)
-        t = counts_f / self.max_iter
+        Z = np.zeros_like(C, dtype=np.complex128)
+        counts = np.zeros(C.shape, dtype=np.int32)
+        active = np.ones(C.shape, dtype=bool)
+
+        for i in range(self.max_iter):
+            Z[active] = Z[active] * Z[active] + C[active]
+            escaped = np.abs(Z) > 2.0
+            newly_escaped = escaped & active
+            counts[newly_escaped] = i + 1
+            active[newly_escaped] = False
+
+            if not active.any():
+                break
+
+        counts[active] = self.max_iter
+        return counts
+
+    def colorize(self, counts):
+        counts = counts.astype(np.float64)
+        t = counts / self.max_iter
 
         rgb = np.zeros((self.height, self.width, 3), dtype=np.uint8)
 
@@ -146,10 +81,9 @@ class MandelbrotRenderer:
         outside = ~inside
 
         tt = t[outside]
-
-        r = (9.0 * (1.0 - tt) * tt**3 * 255.0).clip(0, 255).astype(np.uint8)
-        g = (15.0 * (1.0 - tt)**2 * tt**2 * 255.0).clip(0, 255).astype(np.uint8)
-        b = (8.5 * (1.0 - tt)**3 * tt * 255.0).clip(0, 255).astype(np.uint8)
+        r = (9.0 * (1 - tt) * tt**3 * 255).clip(0, 255).astype(np.uint8)
+        g = (15.0 * (1 - tt)**2 * tt**2 * 255).clip(0, 255).astype(np.uint8)
+        b = (8.5 * (1 - tt)**3 * tt * 255).clip(0, 255).astype(np.uint8)
 
         rgb[..., 0][outside] = r
         rgb[..., 1][outside] = g
@@ -161,22 +95,18 @@ class MandelbrotRenderer:
 
         return rgb
 
-    def render_rgb_array(self, viewport: Viewport) -> np.ndarray:
+    def render_rgb_array(self, viewport: Viewport):
         counts = self.compute_escape_counts(viewport)
         return self.colorize(counts)
 
 
 class MandelbrotApp:
-    """
-    Tkinter 应用：负责窗口、交互和显示。
-    """
-
-    def __init__(self, width: int = 1024, height: int = 768, lib_path: str = "./mandelbrot_c.so"):
+    def __init__(self, width: int = 1024, height: int = 768):
         self.width = width
         self.height = height
 
         self.root = tk.Tk()
-        self.root.title("Mandelbrot Viewer (C accelerated)")
+        self.root.title("Mandelbrot Viewer (1024x768)")
         self.root.geometry(f"{width}x{height + 28}")
         self.root.resizable(False, False)
 
@@ -187,17 +117,15 @@ class MandelbrotApp:
         self.status = tk.Label(self.root, textvariable=self.status_var, anchor="w", relief="sunken")
         self.status.pack(fill="x")
 
-        self.renderer = MandelbrotRenderer(width, height, lib_path=lib_path, max_iter=200)
+        self.renderer = MandelbrotRenderer(width, height, max_iter=200)
 
-        self.initial_viewport = self._fit_aspect(
-            Viewport(
-                xmin=-2.5,
-                xmax=1.0,
-                ymin=-1.3125,
-                ymax=1.3125,
-            )
+        self.initial_viewport = Viewport(
+            xmin=-2.5,
+            xmax=1.0,
+            ymin=-1.3125,
+            ymax=1.3125,
         )
-        self.viewport = self.initial_viewport
+        self.viewport = self._fit_aspect(self.initial_viewport)
 
         self.image = None
         self.drag_start = None
@@ -207,14 +135,11 @@ class MandelbrotApp:
         self.redraw()
 
     def _fit_aspect(self, viewport: Viewport) -> Viewport:
-        """
-        调整视野，使其符合窗口宽高比，避免图像拉伸。
-        """
         screen_ratio = self.width / self.height
         view_ratio = viewport.width() / viewport.height()
 
-        cx = (viewport.xmin + viewport.xmax) / 2.0
-        cy = (viewport.ymin + viewport.ymax) / 2.0
+        cx = (viewport.xmin + viewport.xmax) / 2
+        cy = (viewport.ymin + viewport.ymax) / 2
 
         if view_ratio > screen_ratio:
             new_w = viewport.width()
@@ -224,10 +149,10 @@ class MandelbrotApp:
             new_w = new_h * screen_ratio
 
         return Viewport(
-            xmin=cx - new_w / 2.0,
-            xmax=cx + new_w / 2.0,
-            ymin=cy - new_h / 2.0,
-            ymax=cy + new_h / 2.0,
+            xmin=cx - new_w / 2,
+            xmax=cx + new_w / 2,
+            ymin=cy - new_h / 2,
+            ymax=cy + new_h / 2,
         )
 
     def _bind_events(self):
@@ -271,16 +196,14 @@ class MandelbrotApp:
 
     def on_left_click(self, event):
         c = self.viewport.pixel_to_complex(event.x, event.y, self.width, self.height)
-        self.viewport = self._fit_aspect(
-            self.viewport.recenter_and_zoom(c.real, c.imag, factor=0.5)
-        )
+        self.viewport = self.viewport.recenter_and_zoom(c.real, c.imag, factor=0.5)
+        self.viewport = self._fit_aspect(self.viewport)
         self.redraw()
 
     def on_right_click(self, event):
         c = self.viewport.pixel_to_complex(event.x, event.y, self.width, self.height)
-        self.viewport = self._fit_aspect(
-            self.viewport.recenter_and_zoom(c.real, c.imag, factor=2.0)
-        )
+        self.viewport = self.viewport.recenter_and_zoom(c.real, c.imag, factor=2.0)
+        self.viewport = self._fit_aspect(self.viewport)
         self.redraw()
 
     def on_middle_press(self, event):
@@ -288,7 +211,7 @@ class MandelbrotApp:
         self.drag_viewport = self.viewport
 
     def on_middle_drag(self, event):
-        if self.drag_start is None or self.drag_viewport is None:
+        if self.drag_start is None:
             return
 
         x0, y0 = self.drag_start
@@ -296,7 +219,7 @@ class MandelbrotApp:
         dy_pixels = event.y - y0
 
         dx = -dx_pixels * self.drag_viewport.width() / self.width
-        dy =  dy_pixels * self.drag_viewport.height() / self.height
+        dy = dy_pixels * self.drag_viewport.height() / self.height
 
         self.viewport = self.drag_viewport.translate(dx, dy)
         self.redraw()
@@ -315,7 +238,7 @@ class MandelbrotApp:
         self.on_middle_release(event)
 
     def on_reset(self, event):
-        self.viewport = self.initial_viewport
+        self.viewport = self._fit_aspect(self.initial_viewport)
         self.redraw()
 
     def on_decrease_iter(self, event):
@@ -330,28 +253,8 @@ class MandelbrotApp:
         self.root.mainloop()
 
 
-def default_library_name() -> str:
-    if sys.platform.startswith("linux"):
-        return "mandelbrot_c.so"
-    if sys.platform == "darwin":
-        return "mandelbrot_c.dylib"
-    if os.name == "nt":
-        return "mandelbrot_c.dll"
-    return "mandelbrot_c.so"
-
-
 def main():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    lib_name = default_library_name()
-    lib_path = os.path.join(script_dir, lib_name)
-
-    if not os.path.exists(lib_path):
-        raise FileNotFoundError(
-            f"找不到动态库文件: {lib_path}\n"
-            f"请先编译 C 文件生成 {lib_name}"
-        )
-
-    app = MandelbrotApp(width=1024, height=768, lib_path=lib_path)
+    app = MandelbrotApp(width=1024, height=768)
     app.run()
 
 

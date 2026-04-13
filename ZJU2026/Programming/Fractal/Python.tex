@@ -1,0 +1,1055 @@
+\documentclass[aspectratio=169,11pt]{ctexbeamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecom}{RGB}{0,120,0}
+\definecolor{codestr}{RGB}{163,21,21}
+
+\lstdefinestyle{mystyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{codekw}\bfseries,
+  commentstyle=\color{codecom},
+  stringstyle=\color{codestr},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\lstset{style=mystyle}
+
+\title{从 Mandelbrot 集项目看 C 与 Python 的分工与特点}
+\author{编程简介 / 课堂讲义}
+\date{\today}
+
+\begin{document}
+
+%------------------------------------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+
+\begin{frame}{什么是 Mandelbrot 集}
+给定复数 $c \in \mathbb{C}$，考虑迭代
+\[
+z_{n+1} = z_n^2 + c, \qquad z_0 = 0.
+\]
+若数列 $\{z_n\}$ 始终有界，则称 $c$ 属于 Mandelbrot 集。
+
+\vspace{0.5em}
+在计算机中，我们通常做的是：
+
+\begin{itemize}
+  \item 对屏幕上的每个像素，映射到一个复平面点 $c$；
+  \item 迭代计算 $z_{n+1} = z_n^2 + c$；
+  \item 若在给定最大迭代次数内满足 $|z_n| > 2$，则认为该点“逃逸”；
+  \item 根据逃逸次数给像素着色。
+\end{itemize}
+\end{frame}
+
+
+\section{用 C 语言生成 Mandelbrot BMP 图像}
+
+\begin{frame}{离线版本}
+最自然的入门方案是：
+
+\begin{enumerate}
+  \item 用 C 语言计算每个像素的逃逸次数；
+  \item 将颜色数据写入内存中的像素缓冲区；
+  \item 调用已有的 BMP 输出函数，把图像保存为 \texttt{.bmp} 文件。
+\end{enumerate}
+
+\vspace{0.5em}
+这么做的优点是：
+
+\begin{itemize}
+  \item 不涉及图形界面下的窗口与事件处理等复杂操作；
+  \item 重点放在“像素 $\to$ 复数 $\to$ 迭代次数 $\to$ 颜色”这一计算管线；
+  \item 充分发挥 C 语言在数值计算和内存、文件控制方面的优势。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 版本的基本计算框架：像素到复平面的映射}
+\begin{lstlisting}[language=C]
+for (py = 0; py < height; ++py) {
+    for (px = 0; px < width; ++px) {
+        double cr = xmin + (double)px / (width - 1) * (xmax - xmin);
+        double ci = ymax - (double)py / (height - 1) * (ymax - ymin);
+    }
+}
+\end{lstlisting}
+设当前观察区域为（整数单位）
+\[
+[x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}],
+\]
+则每个像素点 $(px, py)$ 都对应复数
+\[
+c = cr + i\,ci.
+\]
+
+\begin{itemize}
+  \item 图像上的二维像素网格，本质上对应复平面上的一个矩形区域；
+  \item 横坐标 \texttt{px} 对应实部 \texttt{cr}；
+  \item 纵坐标 \texttt{py} 对应虚部 \texttt{ci}；
+  \item 一旦映射完成，每个像素就变成了一个待判断的复数点。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 版本的基本计算框架：Mandelbrot 迭代判定}
+\begin{lstlisting}[language=C]
+double zr = 0.0, zi = 0.0;
+int iter = 0;
+while (iter < max_iter && zr * zr + zi * zi <= 4.0) {
+    double new_zi = 2.0 * zr * zi + ci;
+    double new_zr = zr * zr - zi * zi + cr;
+    zr = new_zr;
+    zi = new_zi;
+    iter++;
+}
+\end{lstlisting}
+这段代码对应数学迭代
+\[
+z_{n+1} = z_n^2 + c, \qquad z_0 = 0.
+\]
+循环终止有两种情况：
+\begin{itemize}
+  \item \texttt{iter == max\_iter}：在给定次数内没有逃逸；
+  \item \texttt{zr*zr + zi*zi > 4.0}：模长超过 2，认为该点已经逃逸。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 版本的基本计算框架：根据迭代次数着色}
+\begin{lstlisting}[language=C]
+int pos = (py * width + px) * 3;
+
+if (iter == max_iter) {     /* 认为在集合内部，显示为黑色 */
+    image[pos + 0] = 0;     /* B */
+    image[pos + 1] = 0;     /* G */
+    image[pos + 2] = 0;     /* R */
+} else {                    /* 根据迭代次数着色，越大颜色越亮 */
+    image[pos + 0] = iter % 256;
+    image[pos + 1] = (iter * 5) % 256;
+    image[pos + 2] = (iter * 13) % 256;
+}
+\end{lstlisting}
+
+着色规则也可以自由设计。
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{C 版本的优点与局限}
+
+\begin{itemize}
+  \item 程序结构明确，所有数据都由程序员自己控制；
+  \item 像素缓冲区通常是连续内存，便于理解二维图像在一维数组中的存放；
+  \item 循环、条件判断、数值计算都很直接；
+  \item 说明 C 很适合实现底层图像处理与数值核心。
+\end{itemize}
+
+明显局限：
+
+\begin{itemize}
+  \item 每次换一个观察区域，都要重新生成一张图片；
+  \item 缺乏实时交互；
+  \item 不方便实时演示“点击某一点继续放大”。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{用 Python 实现实时窗口交互版}
+
+\begin{frame}{为什么改用 Python 做窗口版}
+当我们希望实现下面这些功能时，Python 会更方便：
+
+\begin{itemize}
+  \item 直接弹出一个窗口；
+  \item 鼠标点击某一点后，以该点为中心缩放；
+  \item 自动重绘当前区域；
+  \item 在标题中显示当前中心、宽度、缩放倍数和最大迭代次数。
+\end{itemize}
+
+\vspace{0.5em}
+比如 \texttt{mandelbrot.py} 正是这样的一个纯 Python 版本。它使用
+\texttt{numpy + matplotlib}，窗口大小固定为 \texttt{1024$\times$768}，
+初始视野宽度为 \texttt{3.5}，
+左键缩小视野到原来的 \texttt{0.5} 倍，右键放大到 \texttt{2.0} 倍。
+\end{frame}
+
+%------------------------------------------------
+%------------------------------------------------
+\begin{frame}{Python 版的程序组织：各模块的设计目的}
+\begin{block}{核心模块}
+\begin{itemize}
+  \item \texttt{compute\_max\_iter(view\_width)}：根据当前缩放深度，自适应调整最大迭代次数；
+  \item \texttt{mandelbrot\_smooth(...)}：负责 Mandelbrot 集的核心数值计算，和 C 版本类似；
+  \item \texttt{render()}：调用计算模块，完成当前视图的绘制与刷新（实时显示的要求）；
+  \item \texttt{on\_click(event)}：根据鼠标点击，修改观察中心和缩放比例；
+  \item \texttt{main()}：创建图形窗口，初始化画布，并完成各模块绑定。
+\end{itemize}
+\end{block}
+
+这一组织方式体现了 Python 程序设计中的一个典型特点：
+\begin{itemize}
+  \item \textbf{按功能分模块}，每个函数只负责一个相对独立的任务；
+  \item \textbf{计算、显示、交互分离}，程序结构清晰；
+  \item \textbf{便于修改与扩展}，例如以后可以单独替换着色方式或交互方式。
+\end{itemize}
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{Python 版的程序组织：\texttt{main()} 模块}
+\begin{lstlisting}[language=Python]
+def main():
+    global fig, ax # 全局变量，方便在其他函数中直接访问
+    plt.rcParams["toolbar"] = "None" # 准备绘图环境，关闭默认工具栏
+    fig = plt.figure(figsize=(WIDTH / DPI, HEIGHT / DPI), dpi=DPI)
+    ax = fig.add_subplot(111)
+    render() # 首次绘制
+    fig.canvas.mpl_connect("button_press_event", on_click) # 绑定鼠标点击事件
+    plt.show() # 显示图形窗口并进入事件循环
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python]
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\begin{block}{这两行代码的含义是}
+只有当这个 Python 文件被\textbf{直接运行}时，才执行 \texttt{main()}；
+如果这个文件只是被其他文件 \texttt{import}，则不会自动执行 \texttt{main()}。
+\end{block}
+
+\end{frame}
+
+
+%------------------------------------------------
+\begin{frame}[fragile]{Python 版的交互逻辑}
+\begin{lstlisting}[language=Python]
+def on_click(event):
+    global center_x, center_y, view_width
+
+    if event.inaxes != ax: # 如果点击不在坐标轴内，忽略
+        return
+    if event.xdata is None or event.ydata is None: # 如果点击位置无效，忽略
+        return
+
+    center_x = event.xdata
+    center_y = event.ydata
+    ...
+\end{lstlisting}
+ Python 可读性强、适合快速表达交互逻辑，这一段代码几乎可以直接当自然语言来读：
+
+\begin{itemize}
+  \item 取鼠标点击位置作为新的中心；
+  \item 左键就放大，右键就缩小；
+  \item 每次缩放之后立即重绘。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{用 \texttt{mandelbrot.py} Python 的主要特点}
+
+\begin{enumerate}
+  \item \textbf{代码接近伪代码。}  
+  例如“点击、更新中心、缩放、重绘”这条逻辑链很直观。
+  \item \textbf{库丰富。}  
+  \texttt{numpy} 负责数组，\texttt{matplotlib} 负责绘图和事件。
+  \item \textbf{开发速度快。}  
+  少量代码就做出了一个可视化交互程序。
+  \item \textbf{适合原型设计。}  
+  很容易先把想法做出来，再逐步优化。
+\end{enumerate}
+
+这就是为什么在演示和快速实验阶段，Python 往往特别受欢迎。
+\end{frame}
+
+%------------------------------------------------
+\section{纯 Python 版的局限}
+
+\begin{frame}[fragile]{为什么放大后会更慢}
+在 \texttt{mandelbrot.py} 中，为了充分解析放大后的边界，最大迭代次数会随缩放深度增加：
+\begin{lstlisting}[language=Python]
+def compute_max_iter(view_width):
+    zoom = INITIAL_VIEW_WIDTH / view_width
+    max_iter = int(100 + 40 * np.log10(max(zoom, 1)))
+    return max(100, min(max_iter, 2000))
+\end{lstlisting}
+
+这意味着：
+
+\begin{itemize}
+  \item 缩放越深，\texttt{zoom} 越大，\texttt{max\_iter} 越大；
+  \item 每个像素平均需要做更多轮计算；
+\end{itemize}
+
+因此尽管 Python 版很直观，但缩放效率较低，尤其在高迭代次数时更明显。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{为何 Python 的数值计算效率通常不如 C}
+在单纯进行数值计算时，C 通常比纯 Python 更快，主要原因有以下几点：
+
+\begin{enumerate}
+  \item \textbf{C 会先编译成机器代码。}  
+  运行时 CPU 可以直接执行底层指令；而 Python 通常由解释器逐步执行。
+
+  \item \textbf{C 直接处理固定类型的原始数据。}  
+  例如 \texttt{double}、\texttt{int} 等类型在编译时就已确定，运算路径较短。
+
+  \item \textbf{Python 的数值常常以对象形式存在。}  
+  一次简单的加法、乘法背后，解释器往往还要处理类型检查、对象管理等额外工作。
+
+  \item \textbf{Python 的循环开销更大。}  
+  Mandelbrot 计算包含大量双重循环和内部迭代，这类“简单操作重复很多次”的任务特别容易放大语言本身的开销。
+
+  \item \textbf{Python 更强调开发效率和表达能力。}  
+  它适合组织程序、调用库和实现交互界面；但在纯解释型高频数值循环中通常不如 C 高效。
+\end{enumerate}
+
+\vspace{0.5em}
+因此，可以把两者的特点概括为：
+
+\[
+\boxed{\text{C 更接近机器，适合高性能数值核心；Python 更接近人的表达，适合组织与交互。}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{问题分析：瓶颈到底在哪里}
+我们把整个程序拆开看：
+
+\begin{itemize}
+  \item 鼠标事件处理：计算量很小；
+  \item 更新标题、坐标轴：计算量很小；
+  \item 调 \texttt{imshow} 显示结果：相对可控；
+  \item \textbf{真正最耗时的是：对每个像素不断做 Mandelbrot 迭代。}
+\end{itemize}
+
+\vspace{0.5em}
+因此最合理的优化思路不是“把整个 Python 程序改写成 C”，而是：
+
+\[
+\boxed{\text{让 Python 继续负责界面，让 C 负责核心迭代}}
+\]
+
+但 Python 可以直接调用 C 的库函数吗？
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{可以的，兄弟，可以的...}
+因为 Python 解释器本身就是用 C 实现的，而且操作系统本来就支持程序加载和调用动态库。
+Python 作为程序调用 C 库是把两层机制接在了一起：
+
+\[
+\boxed{
+\text{操作系统的动态库机制}
+\;+\;
+\text{Python 提供的外部函数接口}
+}
+\]
+
+\vspace{0.8em}
+也就是说：
+
+\begin{itemize}
+  \item 操作系统负责“加载库、定位函数、执行调用”；
+  \item Python 负责“把参数整理好，并把调用过程包装成易用接口”。
+\end{itemize}
+
+\vspace{0.8em}
+下面可以分几层来理解这一过程。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{ C 库本质上是什么}
+当 C 代码被编译为动态库后，会生成一个二进制文件，例如：
+
+\begin{itemize}
+  \item Linux：\texttt{.so}
+  \item Windows：\texttt{.dll}
+  \item macOS：\texttt{.dylib}
+\end{itemize}
+
+这个文件中通常包含：
+
+\begin{itemize}
+  \item 已经编译好的机器代码；
+  \item 若干导出函数的名字；
+  \item 这些函数在库中的入口地址信息。
+\end{itemize}
+
+例如我们在 C 中写
+\begin{lstlisting}[language=C]
+EXPORT void mandelbrot_compute(...)
+\end{lstlisting}
+编译后，这个函数就会成为动态库中可供外部调用的一个“入口”。
+
+因此，C 库的本质可以理解为：
+
+\[
+\boxed{\text{一个可被外部程序加载和调用的二进制模块}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{操作系统本来就支持加载和调用动态库}
+现代操作系统都提供了动态链接机制。
+
+例如：
+
+\begin{itemize}
+  \item Linux 上常见的是 \texttt{dlopen}、\texttt{dlsym}；
+  \item Windows 上常见的是 \texttt{LoadLibrary}、\texttt{GetProcAddress}。
+\end{itemize}
+
+\vspace{0.5em}
+这些机制允许一个程序在运行时完成以下事情：
+
+\begin{enumerate}
+  \item 打开某个动态库文件；
+  \item 查找其中某个函数的地址；
+  \item 按约定传入参数；
+  \item 执行该函数；
+  \item 接收返回结果。
+\end{enumerate}
+
+\vspace{0.5em}
+所以，“调用 C 动态库”这件事首先不是 Python 独有的能力，而是操作系统本身就支持的一种机制。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Python 为什么也能调用 C 库}
+因为 Python 解释器本身也是一个正在运行的程序。当然也可以：
+
+\begin{itemize}
+  \item 加载一个动态库；
+  \item 找到库中某个函数；
+  \item 构造对应参数；
+  \item 发起函数调用；
+  \item 把结果再交还给 Python 程序。
+\end{itemize}
+
+\vspace{0.5em}
+像 \texttt{ctypes}、\texttt{cffi}、Python 扩展模块等工具，本质上都在做这件事。
+（Python 扩展模块可以直接用 C 写，然后通过特定接口暴露给 Python）
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{关键在于双方遵守同一个接口约定}
+Python 能调用 C，不是因为它理解 C 的语法，而是因为双方都遵守同一个\textbf{函数接口约定}。
+
+\vspace{0.5em}
+这个约定通常包括：
+
+\begin{itemize}
+  \item 函数名；
+  \item 参数个数；
+  \item 参数类型；
+  \item 返回值类型；
+  \item 内存布局；
+  \item 调用方式。
+\end{itemize}
+
+那么 Python 端就必须按一致的方式声明并传参。  
+如果类型或内存格式不一致，就可能导致结果错误，甚至程序崩溃。
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{NumPy 数组特别适合传给 C}
+在 Python 中，普通对象通常不适合直接交给 C 处理，因为它们的内部结构比较复杂。
+
+\vspace{0.5em}
+而 NumPy 数组的优势在于：
+
+\begin{itemize}
+  \item 数据类型明确，例如 \texttt{float64}、\texttt{uint8}；
+  \item 内存通常连续存放；
+  \item 可以直接取得底层数据地址。
+\end{itemize}
+
+因此，一个 NumPy 数组可以很自然地对应到 C 里的数组指针，例如：
+
+\[
+\texttt{float64} \longleftrightarrow \texttt{double*}
+\]
+\[
+\texttt{uint8} \longleftrightarrow \texttt{uint8\_t*}
+\]
+
+\vspace{0.5em}
+这就使得下面这种合作方式成为可能：
+
+\begin{itemize}
+  \item Python 先分配数组；
+  \item C 直接把结果写入这段内存；
+  \item Python 再读取并显示结果。
+\end{itemize}
+
+这正是许多“Python 调 C”数值程序的典型模式。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{这也是 Python 科学计算生态的重要基础}
+很多人觉得 Python 很适合科学计算，但其高性能计算核心都写在底层语言中，例如：
+
+\begin{itemize}
+  \item C
+  \item C++
+  \item Fortran
+  \item CUDA
+\end{itemize}
+
+而 Python 通常负责：
+
+\begin{itemize}
+  \item 提供更友好的接口；
+  \item 组织程序结构；
+  \item 调用底层库；
+  \item 管理数据流与实验流程。
+\end{itemize}
+
+也就是说，Python 之所以能在科学计算中非常流行，一个关键原因就是：
+
+\[
+\boxed{
+\text{它很擅长做高层控制，并调用底层高性能实现}
+}
+\]
+
+这也是为什么“Python + C”是一种非常经典、非常自然的组合。
+\end{frame}
+
+
+%------------------------------------------------
+\section{ Python 界面 + C 核心计算的混合设计}
+
+\begin{frame}{混合设计的基本思想}
+回到我们的问题，新的设计原则是：
+
+\begin{block}{职责分离}
+\begin{itemize}
+  \item \textbf{Python}：负责窗口、鼠标交互、显示、参数管理；
+  \item \textbf{C}：负责大量重复的像素迭代计算。
+\end{itemize}
+\end{block}
+
+\vspace{0.5em}
+因此我们需要两个文件：
+
+\begin{itemize}
+  \item \texttt{mandelbrot\_viewer.py}：Python 前端，负责交互和可视化；
+  \item \texttt{mandelbrot\_core.c}：C 核心，负责 Mandelbrot 数值计算。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{\texttt{mandelbrot\_viewer.py} 如何调用 C}
+Python 端首先通过 \texttt{ctypes} 加载动态库，并声明 C 函数接口：
+
+\begin{lstlisting}[language=Python]
+def load_library():
+    global lib
+    if sys.platform.startswith("win"):
+        libname = "mandelbrot_core.dll"
+    elif sys.platform == "darwin":
+        libname = "./libmandelbrot_core.dylib"
+    else:
+        libname = "./libmandelbrot_core.so"
+
+    lib = ctypes.CDLL(libname)
+
+    lib.mandelbrot_compute.argtypes = [
+        ctypes.c_int, ctypes.c_int,
+        ctypes.c_double, ctypes.c_double,
+        ...
+\end{lstlisting}
+
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{Python 端的接口设计}
+在 \texttt{mandelbrot\_viewer.py} 中，真正向 C 发起调用的是下面这个包装函数：
+
+\begin{lstlisting}[language=Python]
+def mandelbrot_c(width, height, center_x, center_y,
+                 view_width, view_height, max_iter):
+    smooth = np.zeros((height, width), dtype=np.float64)
+    inside_mask = np.zeros((height, width), dtype=np.uint8)
+
+    lib.mandelbrot_compute(
+        width, height,
+        ...
+\end{lstlisting}
+
+注意这里的设计：
+
+\begin{itemize}
+  \item Python 先分配好 \texttt{numpy} 数组；
+  \item 把数组底层地址传给 C；
+  \item C 直接把结果写入这段内存；
+  \item Python 再拿结果做归一化和显示。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 端核心函数的接口}
+在 \texttt{mandelbrot\_core.c} 中，导出的核心函数是：
+
+\begin{lstlisting}[language=C]
+EXPORT void mandelbrot_compute(
+    int width,
+    int height,
+    double center_x,
+    ...
+\end{lstlisting}
+
+它接收：
+
+\begin{itemize}
+  \item 图像尺寸；
+  \item 当前观察区域的中心与宽高；
+  \item 最大迭代次数；
+  \item 输出数组 \texttt{smooth} 与 \texttt{inside\_mask}。
+\end{itemize}
+
+也就是说，Python 负责“描述现在要算什么”，C 负责“真正把它算出来”。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 端真正加速的是哪一部分}
+\begin{lstlisting}[language=C]
+for (int py = 0; py < height; py++) {
+    double y = y_min + (y_max - y_min) * py / (height - 1);
+
+    for (int px = 0; px < width; px++) {
+        double x = x_min + (x_max - x_min) * px / (width - 1);
+
+        double zr = 0.0, zi = 0.0;
+        int iter = 0;
+        double zr2 = 0.0, zi2 = 0.0;
+
+        while (iter < max_iter && (zr2 + zi2) <= 4.0) {
+            ... Mandelbrot 迭代计算 ...
+        }
+    }
+}
+\end{lstlisting}
+
+\textbf{双重像素循环 + 每个像素内部的迭代循环。}  
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{混合版中的着色分工}
+在 \texttt{mandelbrot\_core.c} 中，若点逃逸，则计算平滑着色值：
+
+\begin{lstlisting}[language=C]
+if (iter >= max_iter) {
+    smooth[idx] = 0.0;
+    inside_mask[idx] = 1;
+} else {
+    double mag = sqrt(zr2 + zi2);
+    double value = iter + 1 - log(log(mag)) / log(2.0);
+    smooth[idx] = value;
+    inside_mask[idx] = 0;
+}
+\end{lstlisting}
+
+而在 Python 端，再对这些值做归一化并交给 \texttt{imshow} 显示。  
+因此这套设计的本质是：
+
+\[
+\text{C 负责“算出原始结果”}
+\qquad
+\text{Python 负责“把结果组织并显示出来”}
+\]
+
+这是一种很清晰的模块化分工。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{这种混合设计的优点}
+\begin{enumerate}
+  \item \textbf{保留了 Python 的直观交互。}
+  鼠标点击、绘图、重绘逻辑仍然写得很清楚。
+  \item \textbf{把性能瓶颈交给了 C。}
+  最耗时的像素迭代在本地代码中执行。
+  \item \textbf{结构上层次分明。}
+  前端与核心计算分离，便于后续维护和扩展。
+\end{enumerate}
+\end{frame}
+
+%------------------------------------------------
+\section{总结 C 和 Python 的区别与特点}
+
+\begin{frame}{这个例子两门语言分别扮演了不同角色}
+
+\begin{block}{Python}
+\begin{itemize}
+  \item 创建窗口；
+  \item 响应鼠标事件；
+  \item 管理当前中心与视野宽度；
+  \item 调用 C 动态库；
+  \item 把结果显示出来。
+\end{itemize}
+\end{block}
+
+\begin{block}{C}
+\begin{itemize}
+  \item 对每个像素做 Mandelbrot 迭代；
+  \item 计算平滑着色值；
+  \item 判断点是否在集合内部；
+  \item 把结果写回输出数组。
+\end{itemize}
+\end{block}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{C 语言的特点}
+结合这个项目，可以把 C 的特点概括为：
+
+\begin{enumerate}
+  \item \textbf{接近底层。}  
+  程序员需要明确处理数据类型、数组、指针和内存。
+  \item \textbf{执行效率高。}  
+  适合大量重复、性能敏感的数值计算。
+  \item \textbf{适合做核心库。}  
+  这里的 \texttt{mandelbrot\_core.c} 就是一个典型的底层计算模块。
+  \item \textbf{控制力强，但细节也更多。}  
+  例如动态库接口、数组地址、跨平台导出都需要显式处理。
+\end{enumerate}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Python 的特点}
+结合这个项目，可以把 Python 的特点概括为：
+
+\begin{enumerate}
+  \item \textbf{表达直观。}  
+  代码接近伪代码，很适合展示程序逻辑。
+  \item \textbf{开发效率高。}  
+  少量代码就能做出完整的交互原型。
+  \item \textbf{生态丰富。}  
+  \texttt{numpy}、\texttt{matplotlib}、\texttt{ctypes} 都可以直接使用。
+  \item \textbf{适合上层组织。}  
+  特别适合界面、脚本、实验和快速验证。
+\end{enumerate}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{两者不是“谁替代谁”，而是“谁更适合哪一层”}
+这个例子最重要的启发不是：
+
+\[
+\text{C 比 Python 好}
+\qquad\text{或}\qquad
+\text{Python 比 C 好}
+\]
+
+而是：
+
+\[
+\boxed{\text{不同任务，应当由不同层次的语言来承担}}
+\]
+
+\vspace{0.5em}
+在这个项目里：
+
+\begin{itemize}
+  \item 若只求性能，全部用 C 也能做；
+  \item 若只求开发方便，全部用 Python 也能做；
+  \item 但从工程与教学角度看，\textbf{Python + C 的协同设计更合理}。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\section{GSL 与 Python 的结合使用}
+
+\begin{frame}{什么是 GSL}
+GSL（GNU Scientific Library）是 GNU 提供的一个科学计算库，主要面向 C/C++ 程序员。
+
+\vspace{0.5em}
+它提供了大量常用数值计算功能，例如：
+
+\begin{itemize}
+  \item 特殊函数
+  \item 随机数生成
+  \item 数值积分
+  \item 线性代数
+  \item 微分方程
+  \item 拟合与优化
+\end{itemize}
+
+\vspace{0.5em}
+可以把它理解为：
+
+\[
+\boxed{\text{一个面向 C 的大型数值计算工具箱}}
+\]
+
+\vspace{0.5em}
+在很多 C 程序里，GSL 的角色类似于：
+“标准库 \texttt{math.h} 不够用了，于是引入一个更强的科学计算库”。
+\end{frame}
+
+
+%------------------------------------------------
+\begin{frame}{示范程序的目标}
+我们选择一个最小示例：
+
+\begin{center}
+\textbf{让 Python 调用一个基于 GSL 的 C 函数，计算 Bessel 函数 \(J_0(x)\)}
+\end{center}
+
+\vspace{0.5em}
+整个调用链为：
+
+\[
+\text{Python}
+\;\xrightarrow{\texttt{ctypes}}\;
+\text{自己写的 C 封装函数}
+\;\xrightarrow{}\;
+\text{GSL}
+\]
+
+\vspace{0.5em}
+这样做的优点是：
+
+\begin{itemize}
+  \item 结构简单；
+  \item 每一层的职责都很清楚；
+  \item 以后可以很容易替换成更复杂的 GSL 功能。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{C 端示范程序：\texttt{gsl\_wrapper.c}}
+\begin{lstlisting}[language=C]
+#include <gsl/gsl_sf_bessel.h>
+#ifdef _WIN32
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
+/* 返回 J0(x) = gsl_sf_bessel_J0(x) */
+EXPORT double my_bessel_j0(double x) {
+    return gsl_sf_bessel_J0(x);
+}
+\end{lstlisting}
+
+这个 C 文件做的事情非常简单：
+
+\begin{itemize}
+  \item 引入 GSL 的 Bessel 函数头文件；
+  \item 定义一个导出函数 \texttt{my\_bessel\_j0}；
+  \item 在函数内部调用 GSL 的 \texttt{gsl\_sf\_bessel\_J0(x)}；
+  \item 把结果直接返回给外部调用者。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{为什么要先写一层 C 封装}
+这里并没有让 Python “直接碰 GSL”，而是先写了一层很薄的 C 包装。
+
+\vspace{0.5em}
+这样做有几个好处：
+
+\begin{enumerate}
+  \item Python 只需要面对一个简单接口，例如 \texttt{double -> double}；
+  \item GSL 的复杂类型和头文件细节都隐藏在 C 内部；
+  \item 更容易调试，也更适合后续扩展；
+  \item 这是一种很典型的工程设计：\textbf{把复杂库隐藏在薄封装后面。}
+\end{enumerate}
+
+\vspace{0.5em}
+也就是说，这一层的角色是：
+
+\[
+\boxed{\text{把“GSL 接口”翻译成“Python 容易调用的 C 接口”}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{编译命令}
+在 Linux 下，可以把这个 C 文件编译成动态库：
+
+\begin{lstlisting}[language=bash]
+gcc -O2 -fPIC -shared gsl_wrapper.c \
+    -o libgsl_wrapper.so \
+    -lgsl -lgslcblas -lm
+\end{lstlisting}
+
+\vspace{0.5em}
+这里各部分的作用分别是：
+
+\begin{itemize}
+  \item \texttt{-shared}：生成共享库；
+  \item \texttt{-fPIC}：生成位置无关代码，便于做动态库；
+  \item \texttt{-lgsl}：链接 GSL 主库；
+  \item \texttt{-lgslcblas}：链接 GSL 使用的 CBLAS 库；
+  \item \texttt{-lm}：链接数学库。
+\end{itemize}
+
+\vspace{0.5em}
+编译完成后，就得到可供 Python 加载的动态库文件。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{Python 端示范程序：\texttt{call\_gsl.py}}
+\begin{lstlisting}[language=Python]
+import ctypes
+
+lib = ctypes.CDLL("./libgsl_wrapper.so")
+
+lib.my_bessel_j0.argtypes = [ctypes.c_double]
+lib.my_bessel_j0.restype = ctypes.c_double
+
+x = 5.0
+y = lib.my_bessel_j0(x)
+
+print(f"J0({x}) = {y:.18e}")
+\end{lstlisting}
+
+\vspace{0.5em}
+这段 Python 程序完成了三件事：
+
+\begin{itemize}
+  \item 加载动态库；
+  \item 告诉 Python 这个函数的参数和返回值类型；
+  \item 像调用普通函数一样调用它，并输出结果。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{Python 端程序逐行理解}
+上面的 Python 代码可以逐步解释为：
+
+\begin{enumerate}
+  \item \texttt{ctypes.CDLL(...)}：把动态库加载到当前进程；
+  \item \texttt{argtypes}：说明函数参数是一个 \texttt{double}；
+  \item \texttt{restype}：说明返回值也是一个 \texttt{double}；
+  \item \texttt{lib.my\_bessel\_j0(x)}：真正调用动态库中的函数。
+\end{enumerate}
+
+\vspace{0.5em}
+因此，Python 端做的并不是数值计算本身，而是：
+
+\[
+\boxed{\text{参数准备 + 函数调用 + 结果接收}}
+\]
+
+这也体现了 Python 在“高层组织”和“接口调用”方面的优势。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{整个调用链如何工作}
+当程序运行时，实际发生的是：
+
+\begin{enumerate}
+  \item Python 启动并执行 \texttt{call\_gsl.py}；
+  \item \texttt{ctypes} 加载 \texttt{libgsl\_wrapper.so}；
+  \item Python 调用 \texttt{my\_bessel\_j0(5.0)}；
+  \item C 函数内部再调用 GSL 的 \texttt{gsl\_sf\_bessel\_J0(5.0)}；
+  \item GSL 返回计算结果；
+  \item C 把结果返回给 Python；
+  \item Python 输出结果。
+\end{enumerate}
+
+\vspace{0.5em}
+所以本质上，Python 并不是自己实现了这些数值算法，而是：
+
+\[
+\boxed{\text{通过接口把任务交给底层 C/GSL 去执行}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{如果进一步扩展，可以做什么}
+这个示范程序只是一个最小例子，但它可以自然扩展到更多场景：
+
+\begin{itemize}
+  \item 用 GSL 做数值积分，然后让 Python 展示结果；
+  \item 用 GSL 做随机数生成，然后让 Python 画统计图；
+  \item 用 GSL 做矩阵运算，然后让 Python 负责实验组织；
+  \item 用 NumPy 数组与 C 指针配合，传递大批量数据。
+\end{itemize}
+
+\vspace{0.5em}
+因此，这个示范程序的价值不在于 Bessel 函数本身，而在于它展示了一条通用路线：
+
+\[
+\text{Python 做上层控制}
+\quad+\quad
+\text{C/GSL 做底层高性能计算}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{这种组合方式的优点}
+把 GSL 和 Python 结合起来，有几个明显优点：
+
+\begin{enumerate}
+  \item 保留了 GSL 的高性能和成熟算法；
+  \item 保留了 Python 的简洁语法和快速开发优势；
+  \item 便于把底层数值计算封装成可复用模块；
+  \item 很适合教学中讲解“高层语言如何调用底层科学计算库”。
+\end{enumerate}
+
+\vspace{0.5em}
+这正体现了一种典型的软件设计思想：
+
+\[
+\boxed{\text{让不同层次的语言各做自己最擅长的事}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{关于现成绑定：PyGSL}
+除了自己写 C 封装层之外，也可以直接使用现成的 Python 绑定，例如 PyGSL。
+
+\vspace{0.5em}
+它的优点是：
+
+\begin{itemize}
+  \item 不必手工写太多底层接口代码；
+  \item 可以更快地在 Python 中使用 GSL 的模块。
+\end{itemize}
+
+\vspace{0.5em}
+但自己写一层简单封装通常更有价值，因为它能清楚展示：
+
+\begin{itemize}
+  \item 动态库是什么；
+  \item Python 如何加载动态库；
+  \item 函数签名为什么必须匹配；
+  \item 为什么要在高层语言和底层库之间设计接口。
+\end{itemize}
+\end{frame}
+
+\end{document}
