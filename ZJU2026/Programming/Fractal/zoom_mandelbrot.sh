@@ -24,7 +24,7 @@ HALF_WIDTH=1.75
 ZOOM_FACTOR=0.97
 
 # 总帧数
-FRAMES=300
+FRAMES=90
 
 mkdir -p "$OUTDIR"
 
@@ -48,6 +48,6 @@ echo "所有帧生成完成。"
 
 echo "开始合成视频..."
 ffmpeg -y -framerate 30 -i "$OUTDIR/frame_%04d.bmp" \
-       -c:v libx264 -pix_fmt yuv420p mandelbrot_zoom.mp4
+       -c:v mpeg4 -pix_fmt yuv420p mandelbrot_zoom.mp4
 
 echo "完成：mandelbrot_zoom.mp4"

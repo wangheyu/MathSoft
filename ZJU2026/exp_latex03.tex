@@ -28,6 +28,7 @@
 % 自定义命令，专门用于实数域的双写 R
 \newcommand{\RR}{\mathbb{R}}
 
+
 % 正文开始，导言结束
 \begin{document}
 
@@ -59,18 +60,20 @@
 \begin{definition}\label{def:limit}
 设函数 $f$ 在点 $a \in \RR$ 的某去心邻域内有定义。
 若存在实数 $L$，使得对任意 $\varepsilon>0$，
-都存在 $\delta>0$，当 $0<|x-a|<\delta$ 时，都有
-\[
+$\exists \delta>0$，当 $0<|x-a|<\delta$ 时，都有
+\begin{equation}
+  \label{eq:limit-def}
 |f(x)-L|<\varepsilon,
-\]
-则称当 $x\to a$ 时，$f(x)$ 的极限为 $L$，
+\end{equation}
+则称当 $x \to a$ 时，$f(x)$ 的极限为 $L$，
 记作
 \[
-\lim_{x\to a} f(x)=L.
+\lim_{x \to a} f(x)=L.
 \]
 \end{definition}
 
 上面的定义是本课程最基本的概念之一，见定义 \ref{def:limit}。
+参见公式 \eqref{eq:limit-def}，这是极限定义的核心表达式。
 
 \begin{theorem}\label{thm:unique-limit}
 若函数 $f$ 在点 $a$ 处的极限存在，
@@ -125,6 +128,16 @@ LaTeX 的优势之一，就是可以将这些结构清晰地表达出来。
 \begin{equation}\label{eq:limit-one-over-n}
 \lim_{n\to\infty}\frac{1}{n}=0.
 \end{equation}
+
+$$
+A = \left[
+\begin{array}{cccc}
+  1 & 2 & 3 & 4 \\
+  5 & \int_0^\pi \sin(x) = 2  & 7 & 8 \\
+  9 & 10 & 11 & 12
+\end{array}
+\right]
+$$
 
 式 \eqref{eq:limit-one-over-n} 是一个最基本的极限结论。
 若将其写成更一般的形式，还可以考虑

@@ -78,15 +78,15 @@ int main(int argc, char *argv[])
      * 对教学演示来说，这个大小足够清楚，
      * 同时生成速度也比较合适。
      */
-    width = 1920;
-    height = 1080;
+    width = 800;
+    height = 600;
 
     /**
      * Mandelbrot 计算参数：
      * - max_iterations 越大，边界细节越丰富；
      * - escape_radius 经典取值通常为 2.0。
      */
-    max_iterations = 50;
+    max_iterations = 500;
     escape_radius = 2.0;
 
     mapping_init(&map, width, height, center_x, center_y, half_width);

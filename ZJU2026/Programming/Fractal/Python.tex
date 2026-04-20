@@ -1029,27 +1029,434 @@ print(f"J0({x}) = {y:.18e}")
 \]
 \end{frame}
 
-%------------------------------------------------
-\begin{frame}{关于现成绑定：PyGSL}
-除了自己写 C 封装层之外，也可以直接使用现成的 Python 绑定，例如 PyGSL。
+% %------------------------------------------------
+% \begin{frame}{关于现成绑定：PyGSL}
+% 除了自己写 C 封装层之外，也可以直接使用现成的 Python 绑定，例如 PyGSL。
+
+% \vspace{0.5em}
+% 它的优点是：
+
+% \begin{itemize}
+%   \item 不必手工写太多底层接口代码；
+%   \item 可以更快地在 Python 中使用 GSL 的模块。
+% \end{itemize}
+
+% \vspace{0.5em}
+% 但自己写一层简单封装通常更有价值，因为它能清楚展示：
+
+% \begin{itemize}
+%   \item 动态库是什么；
+%   \item Python 如何加载动态库；
+%   \item 函数签名为什么必须匹配；
+%   \item 为什么要在高层语言和底层库之间设计接口。
+% \end{itemize}
+% \end{frame}
+\section{用 Shell 脚本生成 Mandelbrot 放大电影}
+
+\begin{frame}{现在考虑一下如何实现这个效果}
+\centering
+\href{run:mandelbrot_zoom.mp4}{
+  \includegraphics[width=0.6\textwidth]{mandelbrot.bmp}
+}
 
 \vspace{0.5em}
-它的优点是：
+目标：把不断放大的图像做成电影
+\end{frame}
+
+%------------------------------------------------
+
+\begin{frame}{目标：把不断放大的图像做成电影}
+我们希望实现下面这个过程：
+
+\begin{enumerate}
+  \item 选定 Mandelbrot 集边界附近的一个点；
+  \item 以这个点为中心生成一张 BMP 图像；
+  \item 缩小观察窗口，再生成下一张 BMP 图像；
+  \item 重复很多次，得到一系列逐步放大的帧；
+  \item 最后把这些帧合成为一个视频文件。
+\end{enumerate}
+
+\vspace{0.5em}
+也就是说，我们并不是一次性直接生成电影，而是先生成：
+
+\[
+\text{frame\_0000.bmp},\ \text{frame\_0001.bmp},\ \text{frame\_0002.bmp},\ \dots
+\]
+
+然后再把它们按顺序拼接起来。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}{为什么这里适合使用 Shell 脚本}
+Shell 脚本本身并不负责 Mandelbrot 集的数学计算。
+
+\vspace{0.5em}
+它适合做的是：
 
 \begin{itemize}
-  \item 不必手工写太多底层接口代码；
-  \item 可以更快地在 Python 中使用 GSL 的模块。
+  \item 循环调用已有程序；
+  \item 管理文件名；
+  \item 自动修改参数；
+  \item 批量生成图像；
+  \item 最后调用视频工具合成电影。
 \end{itemize}
 
 \vspace{0.5em}
-但自己写一层简单封装通常更有价值，因为它能清楚展示：
+因此，这里 Shell 的角色不是“计算 Mandelbrot 集”，而是：
+
+\[
+\boxed{\text{负责自动化调度整个生成流程}}
+\]
+
+\vspace{0.5em}
+这正是 Shell 脚本特别擅长的任务。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{主程序接口已经很适合批处理}
+已知主程序接口为：
+
+\begin{lstlisting}[language=bash]
+./mandelbrot_app output.bmp center_x center_y half_width
+\end{lstlisting}
+
+\vspace{0.5em}
+这表示每次运行程序时，只需要给出四个参数：
 
 \begin{itemize}
-  \item 动态库是什么；
-  \item Python 如何加载动态库；
-  \item 函数签名为什么必须匹配；
-  \item 为什么要在高层语言和底层库之间设计接口。
+  \item \texttt{output.bmp}：本次输出文件名；
+  \item \texttt{center\_x}：观察中心的实部；
+  \item \texttt{center\_y}：观察中心的虚部；
+  \item \texttt{half\_width}：当前视野的半宽。
+\end{itemize}
+
+\vspace{0.5em}
+因此，要生成连续放大的帧，只需要：
+
+\begin{itemize}
+  \item 固定 \texttt{center\_x}, \texttt{center\_y}；
+  \item 每一帧都让 \texttt{half\_width} 再小一点。
 \end{itemize}
 \end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{\texttt{half\_width} 的几何含义}
+如果当前观察中心为
+\[
+(center_x, center_y),
+\]
+并且水平半宽为 \texttt{half\_width}，那么图像对应的实部范围就是：
+
+\[
+[center_x - half\_width,\; center_x + half\_width].
+\]
+
+\vspace{0.5em}
+因此：
+
+\begin{itemize}
+  \item \texttt{half\_width} 越大，看到的区域越大；
+  \item \texttt{half\_width} 越小，放大越深。
+\end{itemize}
+
+\vspace{0.5em}
+所以在脚本中不断更新
+
+\[
+half\_width \leftarrow half\_width \times zoom\_factor
+\qquad (0 < zoom\_factor < 1)
+\]
+
+就可以形成连续放大效果。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{脚本的基本思路}
+整个脚本逻辑可以概括为：
+
+\begin{enumerate}
+  \item 先设定一个边界附近的中心点；
+  \item 指定初始 \texttt{half\_width}；
+  \item 设定总帧数 \texttt{FRAMES}；
+  \item 在循环中反复调用 \texttt{mandelbrot\_app}；
+  \item 每次生成一张新的 BMP；
+  \item 每生成一帧，就把 \texttt{half\_width} 乘上一个缩放因子；
+  \item 所有帧生成完成后，用 \texttt{ffmpeg} 合成视频。
+\end{enumerate}
+
+\vspace{0.5em}
+也就是说，它的结构本质上是：
+
+\[
+\text{参数初始化}
+\to
+\text{逐帧渲染}
+\to
+\text{视频合成}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{Shell 脚本示例}
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.56\textwidth}
+\begin{lstlisting}[language=bash,basicstyle=\ttfamily\tiny]
+#!/bin/bash
+set -e
+
+APP="./mandelbrot_app"  # 可执行程序名
+OUTDIR="frames"         # 输出目录
+# 放大中心
+CENTER_X=-0.743643887037151
+CENTER_Y=0.131825904205330
+
+HALF_WIDTH=1.75         # 初始半宽
+ZOOM_FACTOR=0.97        # 每帧放大比例
+FRAMES=300              # 总帧数
+
+mkdir -p "$OUTDIR"
+
+for ((i=0; i<FRAMES; i++))
+do
+    FRAME_NAME=$(printf "%s/frame_%04d.bmp" "$OUTDIR" "$i")
+
+    "$APP" "$FRAME_NAME" "$CENTER_X" "$CENTER_Y" "$HALF_WIDTH"
+
+    HALF_WIDTH=$(awk "BEGIN { printf \"%.15e\", $HALF_WIDTH * $ZOOM_FACTOR }")
+done
+\end{lstlisting}
+\end{column}
+
+\begin{column}{0.40\textwidth}
+\begin{block}{脚本作用}
+自动调用
+\texttt{mandelbrot\_app}，
+连续生成一系列逐步放大的 BMP 帧。
+\end{block}
+
+\begin{block}{循环逻辑}
+\begin{enumerate}
+  \item 生成当前帧文件名；
+  \item 调用程序输出 BMP；
+  \item 更新 \texttt{HALF\_WIDTH}；
+  \item 进入下一帧。
+\end{enumerate}
+\end{block}
+\end{column}
+
+\end{columns}
+\end{frame}
+%------------------------------------------------
+%------------------------------------------------
+\begin{frame}{脚本中的关键参数说明}
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.52\textwidth}
+\begin{block}{主要参数}
+\begin{itemize}
+  \item \texttt{CENTER\_X}, \texttt{CENTER\_Y}：放大中心；
+  \item \texttt{HALF\_WIDTH}：初始视野半宽；
+  \item \texttt{ZOOM\_FACTOR}：每一帧的缩放比例；
+  \item \texttt{FRAMES}：总帧数；
+  \item \texttt{OUTDIR}：输出帧所在目录。
+\end{itemize}
+\end{block}
+\end{column}
+
+\begin{column}{0.44\textwidth}
+\begin{block}{它们分别控制}
+\begin{itemize}
+  \item 放大“看哪里”；
+  \item 一开始“看多大”；
+  \item 每一帧“放大多快”；
+  \item 电影“一共多长”；
+  \item 所有 BMP 文件“存在哪里”。
+\end{itemize}
+\end{block}
+\end{column}
+
+\end{columns}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{为什么要用格式化文件名}
+脚本中使用了：
+
+\begin{lstlisting}[language=bash]
+FRAME_NAME=$(printf "%s/frame_%04d.bmp" "$OUTDIR" "$i")
+\end{lstlisting}
+
+这会生成：
+
+\[
+\texttt{frame\_0000.bmp},\ \texttt{frame\_0001.bmp},\ \dots
+\]
+
+\vspace{0.5em}
+这样做的目的有两个：
+
+\begin{enumerate}
+  \item 文件名按字典序排列时，也能保持正确的时间顺序；
+  \item \texttt{ffmpeg} 可以直接按这种命名规则读取全部帧。
+\end{enumerate}
+
+\vspace{0.5em}
+如果不用补零，可能会出现：
+
+\[
+\texttt{frame\_1.bmp},\ \texttt{frame\_10.bmp},\ \texttt{frame\_2.bmp}
+\]
+
+这样的顺序问题，从而影响后续合成。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{边界探测点如何选择}
+如果目标是观察 Mandelbrot 集边界的复杂结构，中心点应该选在边界附近，而不是明显在内部或外部。
+
+\vspace{0.5em}
+脚本中给出的经典点是：
+
+\[
+center_x = -0.743643887037151,\qquad
+center_y = 0.131825904205330.
+\]
+
+\vspace{0.5em}
+这类点的特点是：
+
+\begin{itemize}
+  \item 周围细节丰富；
+  \item 连续放大后能看到很多层次；
+  \item 适合生成“zoom movie”。
+\end{itemize}
+
+\vspace{0.5em}
+也就是说，电影效果的好坏，不只取决于程序和脚本，也和所选中心点密切相关。
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{缩放因子如何影响视频效果}
+脚本中用了：
+
+\[
+ZOOM\_FACTOR = 0.97
+\]
+
+这表示每一帧的视野半宽变成上一帧的 \(97\%\)。
+
+\vspace{0.5em}
+不同取值会产生不同效果：
+
+\begin{itemize}
+  \item \texttt{0.99}：放大较慢，更平滑；
+  \item \texttt{0.97}：比较自然，适合演示；
+  \item \texttt{0.95}：放大更快，节奏更强；
+  \item \texttt{0.90}：变化很快，容易显得跳跃。
+\end{itemize}
+
+\vspace{0.5em}
+因此，缩放因子实际上控制的是：
+
+\[
+\boxed{\text{电影的“镜头推进速度”}}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{生成 BMP 帧之后如何变成电影}
+当所有 BMP 帧都生成完成后，可以用 \texttt{ffmpeg} 把它们合成为视频：
+
+\begin{lstlisting}[language=bash]
+ffmpeg -y -framerate 30 -i frames/frame_%04d.bmp \
+       -c:v libx264 -pix_fmt yuv420p mandelbrot_zoom.mp4
+\end{lstlisting}
+
+\vspace{0.5em}
+这条命令的含义是：
+
+\begin{itemize}
+  \item \texttt{-framerate 30}：按每秒 30 帧播放；
+  \item \texttt{-i frames/frame\_\%04d.bmp}：按编号顺序读取帧；
+  \item \texttt{-c:v libx264}：使用 H.264 编码；
+  \item \texttt{-pix\_fmt yuv420p}：使用兼容性较好的像素格式；
+  \item 输出文件名为 \texttt{mandelbrot\_zoom.mp4}。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{整个流程的结构图}
+整个 Mandelbrot 放大电影的生成过程可以总结为：
+
+\[
+\boxed{
+\text{Shell 脚本}
+\to
+\text{逐帧调用 C 程序}
+\to
+\text{生成 BMP 图片序列}
+\to
+\texttt{ffmpeg}
+\to
+\text{MP4 视频}
+}
+\]
+
+\vspace{0.8em}
+各部分分工如下：
+
+\begin{itemize}
+  \item C 程序：负责真正渲染 Mandelbrot 图像；
+  \item Shell 脚本：负责自动化控制参数变化；
+  \item \texttt{ffmpeg}：负责把静态帧拼成动态视频。
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{这种方法的优点}
+用 shell 脚本批量生成放大电影有几个明显优点：
+
+\begin{enumerate}
+  \item \textbf{简单直接}：不需要改动 Mandelbrot 数学核心；
+  \item \textbf{自动化程度高}：一次运行即可生成整个视频；
+  \item \textbf{便于实验}：可以轻松更换中心点、缩放速度、帧数；
+  \item \textbf{结构清晰}：计算、调度、视频编码三部分分离。
+\end{enumerate}
+
+\vspace{0.5em}
+在这个例子中：
+
+\[
+\text{C 负责数值与图像生成，Shell 负责自动化流程控制。}
+\]
+\end{frame}
+
+%------------------------------------------------
+\begin{frame}[fragile]{总结}
+要生成 Mandelbrot 集边界放大的电影，并不需要程序本身直接输出视频。
+
+\vspace{0.5em}
+一种清晰而实用的方法是：
+
+\begin{enumerate}
+  \item 让已有 C 程序按命令行参数生成单张 BMP；
+  \item 用 shell 脚本不断修改 \texttt{half\_width}，批量生成帧；
+  \item 用 \texttt{ffmpeg} 把这些帧合成为电影。
+\end{enumerate}
+
+\vspace{0.8em}
+一句话概括就是：
+
+\[
+\boxed{
+\text{先生成图片序列，再把图片序列合成为视频}
+}
+\]
+
+所以我们需要有较为宽广的基础知识。
+\end{frame}
+
+
 
 \end{document}

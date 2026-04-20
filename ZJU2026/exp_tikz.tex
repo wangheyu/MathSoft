@@ -10,6 +10,9 @@
 \usepackage{pgfplots} % 绘制函数图
 \pgfplotsset{compat=1.18} %兼容格式
 
+\def\layersep{2.5cm}
+
+
 % 设置文章标题
 \title{数学分析课程简介}
 % 设置撰写日期，如果去掉{}就会自动插入最后修改日期
@@ -144,24 +147,25 @@ LaTeX 的优势之一，就是可以将这些结构清晰地表达出来。
 \subsection{直接绘图}
 可以直接绘图：
 \begin{tikzpicture}
-  \draw[thick] (0,0) circle (1cm);
-  \node at (0,0) {$A$};
+  \draw[red, thick, dashed] (0,0) circle (1cm);
+  \node at (0,0) {$\alpha$};
 \end{tikzpicture}
 
-甚至可以直接行内绘制，这是正文中的一个小图：\tikz \fill (0,0) circle (3pt);
+甚至可以直接行内绘制，
+这是正文中的一个小图：\tikz \fill (0,0) circle (5pt);
 
 \subsection{配合 figure 使用}
 
 可以配合 figure 环境使用，可以交叉引用，如图 \ref{fig:Tikz}。
 
-\begin{figure}[t!]
-    \label{fig:Tikz}
+\begin{figure}[htbp]
     \centering
 \begin{tikzpicture}
   \draw[thick] (0,0) circle (1cm);
   \node at (0,0) {$A$};
 \end{tikzpicture}
 \caption{一个 Tikz 的示意图。}
+\label{fig:Tikz}
 \end{figure}
 
 
@@ -182,17 +186,26 @@ LaTeX 的优势之一，就是可以将这些结构清晰地表达出来。
 
 箭头 5：\tikz \draw[<->,dashed,thick,red] (0,0) -- (2,0);
 
-标注 1：\tikz \draw (0,0) -- (2,0) node[midway, above] {$a$};
+标注 1：\tikz \draw (0,0) -- (2,0) node[left] {$a$};
 
 标注 2：\tikz \draw (0,0) node[left] {$a$} -- (2,0) node[right] {$b$};
+
+相对坐标：
+
+\tikz \draw (0,0) -- (1,1) -- (2,0) ;
+
+\tikz \draw (0,0) -- ++(1,1) -- ++(1,-1) ;
+
 
 \textbf{示例：带网格的简单坐标图}
 \begin{center}
 \begin{tikzpicture}[scale=0.75]
-  \draw[step=1cm, gray!30] (-0.5,-0.5) grid (3.5,2.5);
-  \draw[->] (0,0) -- (3.2,0) node[right] {$x$};
-  \draw[->] (0,0) -- (0,2.2) node[above] {$y$};
-\end{tikzpicture}
+  \draw[step=1cm, gray!50] (-0.5,-0.5) grid (3.5,2.5);
+  \begin{scope}[thick, blue, ->] 
+  \draw (0,0) -- (3.2,0) node[right] {$x$};
+  \draw (0,0) -- (0,2.2) node[above] {$y$};
+\end{scope}
+  \end{tikzpicture}
 \end{center}
 
 \textbf{示例：几何示意图}
@@ -207,7 +220,7 @@ LaTeX 的优势之一，就是可以将这些结构清晰地表达出来。
 \begin{tikzpicture}
   \draw[->] (-0.5,0) -- (3.5,0);
   \draw[->] (0,-0.5) -- (0,3.5);
-  \draw[domain=0:3,smooth,variable=\x] plot ({\x},{0.3*\x*\x});
+  \draw[domain=0:3,smooth,variable=\x] plot ({\x},{0.7*\x*\x});
 \end{tikzpicture}
 
 \textbf{示例：流程图}
@@ -222,7 +235,8 @@ LaTeX 的优势之一，就是可以将这些结构清晰地表达出来。
 
 曲线：
 \begin{tikzpicture}
-  \draw (0,0) .. controls (1,1) and (2,1) .. (3,0);
+  \draw (0,0) .. controls (1,1) and (2,-1) .. (3,0);
+  \draw (3,0) .. controls (4,1) and (5,1) .. (5,0);
 \end{tikzpicture}
 
 重复：
@@ -246,6 +260,44 @@ pgfplots:
 并能够书写规范的定义、命题和证明。
 本课程既重视计算训练，
 也重视数学表述的严谨性。
+
+
+\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+    \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+    \tikzstyle{neuron}=[circle,fill=black!25,minimum size=17pt,inner sep=0pt]
+    \tikzstyle{input neuron}=[neuron, fill=green!50];
+    \tikzstyle{output neuron}=[neuron, fill=red!50];
+    \tikzstyle{hidden neuron}=[neuron, fill=blue!50];
+    \tikzstyle{annot} = [text width=4em, text centered]
+
+    % Draw the input layer nodes
+    \foreach \name / \y in {1,...,4}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron, pin=left:Input \#\y] (I-\name) at (0,-\y) {};
+
+    % Draw the hidden layer nodes
+    \foreach \name / \y in {1,...,5}
+        \path[yshift=0.5cm]
+            node[hidden neuron] (H-\name) at (\layersep,-\y cm) {};
+
+    % Draw the output layer node
+    \node[output neuron,pin={[pin edge={->}]right:Output}, right of=H-3] (O) {};
+
+    % Connect every node in the input layer with every node in the
+    % hidden layer.
+    \foreach \source in {1,...,4}
+        \foreach \dest in {1,...,5}
+            \path (I-\source) edge (H-\dest);
+
+    % Connect every node in the hidden layer with the output layer
+    \foreach \source in {1,...,5}
+        \path (H-\source) edge (O);
+
+    % Annotate the layers
+    \node[annot,above of=H-1, node distance=1cm] (hl) {Hidden layer};
+    \node[annot,left of=hl] {Input layer};
+    \node[annot,right of=hl] {Output layer};
+\end{tikzpicture}
 
 \section{考核方式}
 

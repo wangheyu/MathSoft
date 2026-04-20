@@ -1,0 +1,53 @@
+\documentclass[12pt]{ctexart}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{fontspec}
+%\setmainfont{SimSun} % 使用宋体（中文支持）
+
+\geometry{margin=1in}
+
+\theoremstyle{definition}
+\newtheorem{theorem}{定理}[section]
+
+\begin{document}
+
+\begin{theorem}[7.3.1]
+设 $f(x)$ 在 $[a,b]$ 上可积，作函数
+\[
+F(x) = \int_a^x f(t)\,dt, \quad x \in [a,b],
+\]
+则
+\begin{enumerate}
+    \item $F(x)$ 是 $[a,b]$ 上的连续函数；
+    \item 若 $f(x)$ 在 $[a,b]$ 上连续，则 $F(x)$ 在 $[a,b]$ 上可微，且有
+    \[
+    F'(x) = f(x).
+    \]
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+由定理条件，知 $F(x)$ 在整个 $[a,b]$ 上有定义。由定积分的区间可加性，
+\[
+F(x+\Delta x) - F(x) = \int_a^{x+\Delta x} f(t)\,dt - \int_a^x f(t)\,dt = \int_x^{x+\Delta x} f(t)\,dt.
+\]
+
+记 $m, M$ 分别为 $f(x)$ 在 $[a,b]$ 上的下确界和上确界，由定积分第一中值定理，即得到
+\[
+F(x+\Delta x) - F(x) =
+\begin{cases}
+\eta \cdot \Delta x & (\eta \in [m,M]), \quad \text{若 } f(x) \text{ 在 } [a,b] \text{ 上可积}, \\
+f(\xi) \cdot \Delta x & (\xi \text{ 在 } x \text{ 与 } x+\Delta x \text{ 之间}), \quad \text{若 } f(x) \text{ 在 } [a,b] \text{ 上连续}.
+\end{cases}
+\]
+
+显然，不管在哪一种情况下，当 $\Delta x \to 0$ 时都有 $F(x+\Delta x) - F(x) \to 0$，即 $F(x)$ 在 $[a,b]$ 上连续。
+
+若 $f(x)$ 在 $[a,b]$ 连续，当 $\Delta x \to 0$ 时有 $\xi \to x$，因而 $f(\xi) \to f(x)$，于是
+\[
+F'(x) = \lim_{\Delta x \to 0} \frac{F(x+\Delta x) - F(x)}{\Delta x} = \lim_{\Delta x \to 0} f(\xi) = f(x).
+\]
+\end{proof}
+
+\end{document}
