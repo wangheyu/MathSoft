@@ -1,0 +1,272 @@
+\chapter{日地系统的理论分析}
+
+\section{问题背景}
+
+为了研究火箭或探测器在日地系统中的运动，最自然的第一步并不是立刻把推力、变质量和摄动全部放入模型，
+而是先把日地系统本身的动力学结构写清楚。若能先把太阳和地球之间的相对运动还原为一个标准二体问题，
+那么后续的轨道设计与数值模拟都会更清晰\cite{MurrayDermott1999,BateMuellerWhite1971}。
+
+本章的目标是：
+\begin{enumerate}[label=\arabic*.]
+  \item 写出太阳和地球在万有引力作用下的完整运动方程；
+  \item 将该系统化为一个关于相对位置的中心力二体问题；
+  \item 说明质心坐标下太阳与地球的位置表达；
+  \item 给出圆轨道的特解及其周期公式；
+  \item 说明固定太阳近似的依据。
+\end{enumerate}
+
+\section{日地系统的完整牛顿方程}
+
+设
+\[
+M_S>0,\qquad M_E>0
+\]
+分别表示太阳和地球的质量，
+\[
+\bm r_S(t),\qquad \bm r_E(t)\in \mathbb R^3
+\]
+分别表示时刻 \(t\) 太阳和地球在某惯性参考系中的位置向量。
+
+记万有引力常数为 \(G\)。根据牛顿万有引力定律\cite{MurrayDermott1999,BateMuellerWhite1971}，
+太阳受到地球的引力为
+\[
+\bm F_{S\leftarrow E}
+=
+G M_S M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\]
+地球受到太阳的引力为
+\[
+\bm F_{E\leftarrow S}
+=
+G M_S M_E
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\]
+由牛顿第二定律得
+\begin{equation}\label{eq:sun-motion}
+M_S \ddot{\bm r}_S
+=
+G M_S M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\end{equation}
+\begin{equation}\label{eq:earth-motion}
+M_E \ddot{\bm r}_E
+=
+G M_S M_E
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\end{equation}
+
+将质量约去，可写为
+\begin{equation}\label{eq:sun-motion-2}
+\ddot{\bm r}_S
+=
+G M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\end{equation}
+\begin{equation}\label{eq:earth-motion-2}
+\ddot{\bm r}_E
+=
+G M_S
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\end{equation}
+
+这是一个耦合的二阶非线性常微分方程组，描述太阳和地球在相互引力作用下的运动。
+
+\section{相对运动方程的导出}
+
+由于在双体系统中真正重要的是两个天体之间的相对位置，因此引入
+\[
+\bm r(t)=\bm r_E(t)-\bm r_S(t).
+\]
+于是
+\[
+\ddot{\bm r}(t)=\ddot{\bm r}_E(t)-\ddot{\bm r}_S(t).
+\]
+将 \eqref{eq:sun-motion-2} 和 \eqref{eq:earth-motion-2} 代入，得到
+\begin{align*}
+\ddot{\bm r}
+&=
+G M_S \frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}
+-
+G M_E \frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3}.
+\end{align*}
+注意到
+\[
+\bm r_S-\bm r_E=-(\bm r_E-\bm r_S)=-\bm r,
+\qquad
+\bm r_E-\bm r_S=\bm r,
+\]
+故
+\begin{align*}
+\ddot{\bm r}
+&=
+- G M_S \frac{\bm r}{\|\bm r\|^3}
+- G M_E \frac{\bm r}{\|\bm r\|^3} \\
+&=
+- G(M_S+M_E)\frac{\bm r}{\|\bm r\|^3}.
+\end{align*}
+因此相对运动满足
+\begin{equation}\label{eq:relative-motion}
+\ddot{\bm r}
+=
+- G(M_S+M_E)\frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+若记
+\[
+\mu:=G(M_S+M_E),
+\]
+则可简写为
+\begin{equation}\label{eq:relative-motion-mu}
+\ddot{\bm r}=-\mu \frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+
+这一步把原来的耦合双体系统化为了一个标准的中心力二体问题\cite{MurrayDermott1999,BateMuellerWhite1971}。
+以后无论是理论分析还是数值模拟，都可以直接围绕 \eqref{eq:relative-motion-mu} 展开。
+
+\section{质心运动与质心坐标表达}
+
+定义日地系统的质心为
+\[
+\bm R_c(t)=\frac{M_S\bm r_S(t)+M_E\bm r_E(t)}{M_S+M_E}.
+\]
+对其求二阶导数，得
+\[
+(M_S+M_E)\ddot{\bm R}_c=M_S\ddot{\bm r}_S+M_E\ddot{\bm r}_E.
+\]
+若将日-地系统视为孤立系统，由 \eqref{eq:sun-motion} 和 \eqref{eq:earth-motion} 可知右边恰好为零，因此
+\[
+\ddot{\bm R}_c=0.
+\]
+所以质心作匀速直线运动；特别地，若选取质心静止系，则可取\cite{MurrayDermott1999,BateMuellerWhite1971}
+\[
+\bm R_c=0.
+\]
+
+在质心系中，由
+\[
+M_S \bm r_S + M_E \bm r_E = 0,
+\qquad
+\bm r = \bm r_E-\bm r_S
+\]
+可解得
+\begin{equation}\label{eq:rs-bary}
+\bm r_S=-\frac{M_E}{M_S+M_E}\bm r,
+\end{equation}
+\begin{equation}\label{eq:re-bary}
+\bm r_E=\frac{M_S}{M_S+M_E}\bm r.
+\end{equation}
+
+取模可得
+\[
+r_S=\frac{M_E}{M_S+M_E}\,r,
+\qquad
+r_E=\frac{M_S}{M_S+M_E}\,r,
+\]
+其中 \(r=\|\bm r\|\) 表示日地之间的相对距离。因此
+\[
+\frac{r_S}{r_E}=\frac{M_E}{M_S}.
+\]
+
+在实际天体力学计算中，往往直接使用标准引力参数 \(GM\) 而不是单独使用质量 \(M\)\cite{JPLAstroParameters}，因为运动方程本身直接依赖于 \(GM\)，而且观测上 \(GM\) 的精度通常更高。于是
+\[
+\frac{M_E}{M_S}=\frac{GM_E}{GM_S}.
+\]
+若取太阳和地球的标准引力参数，便可估计质心离太阳中心极近，太阳只作极小幅度摆动，而地球几乎绕着该质心作完整的天文单位尺度运动。
+
+\section{圆轨道作为特殊解}
+
+下面考虑 \eqref{eq:relative-motion-mu} 的一个特殊解：圆轨道。
+
+设日地相对距离恒为常数 \(a>0\)，且轨道位于某一固定平面内。取该平面为 \(xy\)-平面，设
+\begin{equation}\label{eq:circular-ansatz}
+\bm r(t)
+=
+a
+\begin{pmatrix}
+\cos nt\\
+\sin nt\\
+0
+\end{pmatrix},
+\end{equation}
+其中 \(n>0\) 为常数角速度。则
+\[
+\ddot{\bm r}(t)=-n^2\bm r(t).
+\]
+另一方面，由于 \(\|\bm r(t)\|=a\)，方程 \eqref{eq:relative-motion-mu} 右端为
+\[
+-\mu \frac{\bm r(t)}{\|\bm r(t)\|^3}=-\mu \frac{\bm r(t)}{a^3}.
+\]
+因此必须有
+\[
+-n^2\bm r(t)=-\mu \frac{\bm r(t)}{a^3},
+\]
+从而得到
+\begin{equation}\label{eq:n2}
+n^2=\frac{\mu}{a^3}=\frac{G(M_S+M_E)}{a^3}.
+\end{equation}
+于是圆轨道周期为
+\begin{equation}\label{eq:period}
+T=\frac{2\pi}{n}=2\pi \sqrt{\frac{a^3}{G(M_S+M_E)}}.
+\end{equation}
+这正是二体问题中的 Kepler 第三定律形式\cite{MurrayDermott1999,BateMuellerWhite1971}。
+
+\section{固定太阳近似的来源}
+
+在日地系统中，太阳质量远大于地球质量，查找相关数据，太阳和地球的标准引力参数分别为\cite{JPLAstroParameters}
+\[
+GM_S=1.32712440041279419\times 10^{11}\ \mathrm{km^3\,s^{-2}},
+\qquad
+GM_E=398600.435507\ \mathrm{km^3\,s^{-2}},
+\]
+得
+\[
+\frac{r_S}{r_E}
+=
+\frac{M_E}{M_S}
+=
+\frac{GM_E}{GM_S}
+\approx 3.00349\times 10^{-6}.
+\]
+也就是说，
+\[
+r_S \approx 3.0\times 10^{-6}\, r_E,
+\]
+太阳绕质心的运动尺度只有地球的约三百万分之一。
+
+因此
+\[
+M_S\gg M_E,
+\qquad
+M_S+M_E\approx M_S.
+\]
+于是相对运动方程 \eqref{eq:relative-motion-mu} 近似为
+\begin{equation}\label{eq:approx-relative}
+\ddot{\bm r}\approx -GM_S\frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+如果再进一步把太阳近似固定在原点，即令
+\[
+\bm r_S(t)\approx 0,
+\qquad
+\bm r_E(t)\approx \bm r(t),
+\]
+则地球运动可近似写成
+\begin{equation}\label{eq:earth-around-fixed-sun}
+\ddot{\bm r}_E=-GM_S\frac{\bm r_E}{\|\bm r_E\|^3}.
+\end{equation}
+
+这就是通常所谓的“地球绕固定太阳运动”模型\cite{MurrayDermott1999,BateMuellerWhite1971}。
+它不是最原始的精确模型，而是从完整日地二体系统经过 \(M_S\gg M_E\) 
+这一物理近似后得到的。
+
+\section{本章小结}
+
+综上，日地系统的理论结构可以概括为：
+\begin{enumerate}[label=\arabic*.]
+  \item 在惯性系中，太阳和地球满足耦合的牛顿方程；
+  \item 引入相对位置 \(\bm r=\bm r_E-\bm r_S\) 后，系统化为中心力二体方程 \eqref{eq:relative-motion-mu}；
+  \item 在质心系中，太阳和地球的位置由 \eqref{eq:rs-bary}--\eqref{eq:re-bary} 给出；
+  \item 圆轨道是该系统的显式特解，其角速度和周期满足 \eqref{eq:n2}--\eqref{eq:period}；
+  \item 固定太阳模型是 \(M_S\gg M_E\) 下的近似模型。
+\end{enumerate}
+
+因此，第二章的数值模拟将以相对运动方程为基础展开。

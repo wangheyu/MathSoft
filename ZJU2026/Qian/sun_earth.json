@@ -1,0 +1,41 @@
+{
+  "profile_type": "two_body_2d",
+  "name": "Sun-Earth System (Circular Approximation)",
+  "description": "A simple Sun-Earth two-body initial condition using a circular-orbit approximation about the barycenter.",
+  "units": {
+    "mass": "kg",
+    "position": "km",
+    "velocity": "km/s",
+    "G": "km^3/(kg*s^2)",
+    "dt": "s"
+  },
+  "simulation": {
+    "G": 6.6743e-20,
+    "dt": 21600,
+    "steps_per_frame": 4
+  },
+  "body1": {
+    "name": "Sun",
+    "mass": 1.98847e+30,
+    "position": [
+      -449.3030923607656,
+      0.0
+    ],
+    "velocity": [
+      0.0,
+      -8.945699906746266e-05
+    ]
+  },
+  "body2": {
+    "name": "Earth",
+    "mass": 5.9722e+24,
+    "position": [
+      149597421.39690763,
+      0.0
+    ],
+    "velocity": [
+      0.0,
+      29.785097440755077
+    ]
+  }
+}

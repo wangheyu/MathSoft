@@ -1,0 +1,47 @@
+{
+  "profile_type": "two_body_2d",
+  "name": "Sun-Earth Realistic Profile (2026-04-20 TDB)",
+  "description": "Sun-Earth 2D initial state based on JPL Solar System Dynamics approximate planetary elements for the Earth-Moon barycenter, evaluated at epoch 2026-04-20 00:00:00 TDB and converted into a Sun-Earth barycentric two-body state.",
+  "epoch_tdb": "2026-04-20 00:00:00",
+  "units": {
+    "mass": "kg",
+    "position": "km",
+    "velocity": "km/s",
+    "G": "km^3/(kg*s^2)",
+    "dt": "s"
+  },
+  "notes": [
+    "This is a realistic 2D Sun-Earth initial condition for the simulator, not a full n-body ephemeris.",
+    "The simulator itself is two-body, so Moon and planetary perturbations are not included after t=0.",
+    "The in-plane state is derived from JPL's published approximate planetary elements and JPL astrodynamic constants."
+  ],
+  "simulation": {
+    "G": 6.6743e-20,
+    "dt": 21600,
+    "steps_per_frame": 4
+  },
+  "body1": {
+    "name": "Sun",
+    "mass": 1.988409870698051e+30,
+    "position": [
+      128.5716253925205,
+      -432.63757556801266
+    ],
+    "velocity": [
+      8.57631388843817e-05,
+      2.3993043842687018e-05
+    ]
+  },
+  "body2": {
+    "name": "Earth",
+    "mass": 5.972168494074286e+24,
+    "position": [
+      -42807414.65877064,
+      144044971.33612907
+    ],
+    "velocity": [
+      -28.55449822193068,
+      -7.98838914546161
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "profile_type": "two_body_2d",
+  "name": "Equal-Mass Near Circular Orbit",
+  "description": "Two equal masses orbiting approximately around their common center of mass.",
+  "simulation": {
+    "G": 1.0,
+    "dt": 0.01,
+    "steps_per_frame": 4
+  },
+  "body1": {
+    "mass": 1.0,
+    "position": [-1.0, 0.0],
+    "velocity": [0.0, 0.5]
+  },
+  "body2": {
+    "mass": 1.0,
+    "position": [1.0, 0.0],
+    "velocity": [0.0, -0.5]
+  }
+}

@@ -1,0 +1,100 @@
+\appendix
+
+\section*{附录：关于 JPL 的简要介绍}
+
+JPL 是 \emph{Jet Propulsion Laboratory} 的缩写，中文通常译为“喷气推进实验室”。
+它是美国最重要的航天科研机构之一，现由加州理工学院（California Institute of Technology, Caltech）
+为美国国家航空航天局（NASA）负责管理和运行。JPL 的起源可以追溯到 20 世纪 30 年代末，
+当时加州理工学院教授 Theodore von K\'arm\'an 主持早期火箭推进研究，
+Frank Malina 是这一方向最早的学术带头人，而 Jack Parsons 与 Edward Forman 
+则是最早参与实验并推动项目落地的核心成员之一。由于这些早期火箭实验常常伴随爆炸与危险操作，
+这批研究者在校园中一度被戏称为 \emph{Suicide Squad}（“自杀小队”）\cite{JPLHistory,CaltechLaunchPoints}。
+
+\begin{figure}[htbp]
+  \centering
+\includegraphics[width=0.75\textwidth]{images/jpl.png}
+\caption{照片收藏在 加州理工学院档案馆 (Caltech Archives) 或 JPL 历史档案馆中。
+拍摄时间：约 1940年代初（JPL 正式成立前后）。地点：加州理工学院（Caltech）的某处实验楼前。
+照片中的人物（从左至右）：阿波罗·史密斯 (Apollo M.O. Smith)：空气动力学专家。
+弗兰克·马利纳 (Frank Malina)：JPL 的第一任主管，实验室的学术和组织灵魂。
+钱学森 (Tsien Hsue-shen)：理论数学与高速飞行理论专家，JPL 联合创始人，后来的“中国航天之父”。
+爱德华·福尔曼 (Edward Forman)：天才机械师，“自杀小队”初创成员之一。
+杰克·帕森斯 (Jack Parsons)：化学天才，固体和液体火箭燃料的奠基人\cite{LindaHallTsien2023}。
+}  
+\end{figure}
+
+值得一提的是，钱学森（Qian Xuesen, Tsien Hsue-shen）也是这一早期团队的重要参与者之一\cite{CaltechLaunchPoints,LindaHallTsien2023,CaltechEASTsien2009}。
+他在加州理工学院学习和研究期间加入了这批火箭实验者，并参与了 1943 年提交给美军的一份 proposal；
+在该 proposal 中，\emph{Jet Propulsion Laboratory} 这一名称第一次被正式使用。
+第二次世界大战期间，这些研究逐步发展为与喷气辅助起飞（jet-assisted takeoff）和火箭推进有关的工程项目，
+并最终在 1944 年发展成正式的 JPL。1958 年 NASA 成立后，JPL 转入 NASA 体系，成为其重要的无人深空探测中心\cite{JPLHistory}。
+
+\begin{figure}[htbp]
+  \centering
+\includegraphics[width=0.75\textwidth]{images/qian.png}
+\caption{钱学森去世时加州理工发的悼念公告\cite{CaltechEASTsien2009}}  
+\end{figure}
+
+
+此后，JPL 在美国航天史中发挥了关键作用，参与并主导了多项具有里程碑意义的任务，
+例如 \emph{Explorer 1}、\emph{Ranger}、\emph{Surveyor}、\emph{Voyager}、\emph{Galileo}、
+\emph{Cassini}、\emph{Mars Pathfinder} 以及后续多代火星探测器等。
+今天，JPL 仍然是太阳系探测、深空通信、轨道设计与高精度天体历表计算的重要机构，
+其发布的数据与工具在航天工程和天体力学研究中具有广泛影响。
+
+\chapter{JPL Horizons 数据获取示例}
+
+JPL Horizons 是美国喷气推进实验室（Jet Propulsion Laboratory, JPL）
+太阳系动力学组提供的一套在线星历与轨道信息服务系统。
+它的核心作用是：针对太阳系中的各种天体，按照用户指定的参考中心、参考平面、
+时间区间和输出格式，生成高精度的星历、轨道要素以及笛卡尔状态向量。
+JPL 官方手册指出，Horizons 面向的对象包括观测者、任务设计人员、研究人员以及公众，
+其基本功能是在太阳系范围内，对天体的位置、运动和可观测性随时间的变化进行高精度数值表征。
+
+
+\section{使用 JPL Horizons API 获取数据的示例}  
+
+以下给出一个便于命令行使用的 Horizons API 示例。为了避免 URL 编码问题，建议使用 \texttt{curl --get} 与 \texttt{--data-urlencode}：
+
+\begin{verbatim}
+curl --get "https://ssd.jpl.nasa.gov/api/horizons.api" \
+  --data-urlencode "format=text" \
+  --data-urlencode "COMMAND='3'" \
+  --data-urlencode "CENTER='10'" \
+  --data-urlencode "MAKE_EPHEM='YES'" \
+  --data-urlencode "EPHEM_TYPE='VECTORS'" \
+  --data-urlencode "START_TIME='2026-01-01'" \
+  --data-urlencode "STOP_TIME='2026-01-10'" \
+  --data-urlencode "STEP_SIZE='1 d'" \
+  --data-urlencode "OUT_UNITS='AU-D'" \
+  --data-urlencode "REF_PLANE='ECLIPTIC'" \
+  --data-urlencode "REF_SYSTEM='J2000'" \
+  --data-urlencode "VEC_TABLE='2'" \
+  --data-urlencode "CSV_FORMAT='YES'"
+\end{verbatim}
+
+其中目标体 \texttt{COMMAND='3'} 表示 Earth--Moon Barycenter，参考中心 \texttt{CENTER='10'} 表示 Sun。
+若只想获取某个单独历元的状态，可改用 \texttt{TLIST} 参数并只请求一个时刻。
+若希望获取轨道要素而不是状态向量，只需把 \texttt{EPHEM\_TYPE='VECTORS'} 
+改为 \texttt{EPHEM\_TYPE='ELEMENTS'}。
+
+\section{天文学数据查询工具 astroquery 简要介绍}
+
+\texttt{astroquery} 是 Python 天文学软件生态中一个常用的数据查询工具包\cite{GinsburgEtAl2019,AstroqueryDocs}，
+它属于 Astropy 项目体系中的一个 \emph{coordinated package}。
+其主要作用是为研究者提供统一的 Python 接口，以便直接访问各类在线天文数据库和网络服务，
+而不必手工编写网页请求或逐条解析返回结果。通过 \texttt{astroquery}，
+用户可以较方便地调用诸如 JPL Horizons、SIMBAD、VizieR、MAST 等常见天文数据源，
+并将查询结果直接转换为适合后续数值计算和数据分析的结构化对象。
+
+从功能上看，\texttt{astroquery} 的意义在于把原本分散在不同网站和接口中的天文数据服务，
+封装为风格较统一的 Python 子模块。例如，在本文所涉及的 Sun--EM Bary 与 JPL Horizons 对比实验中，
+就可以通过 \texttt{astroquery.jplhorizons} 直接获取 Earth--Moon Barycenter 相对 Sun 的状态向量，
+而不必再手工拼接 URL 或解析复杂的文本输出。这种做法不仅更简洁，也更能减少由于格式解析错误而带来的程序性误差。
+
+在维护机制上，\texttt{astroquery} 并不是某一家公司单独提供的软件，
+而是由 Astropy 社区和 Astropy Project 共同维护的开源项目。
+作为 Astropy 的 coordinated package，它在整体上接受 Astropy Project 的组织支持，
+而具体开发与日常维护则由若干维护者持续推进。正因为如此，\texttt{astroquery} 
+已成为天文学 Python 工作流中连接“在线权威数据源”与“本地数值分析程序”的重要桥梁。
+

@@ -1,0 +1,49 @@
+\documentclass[12pt,a4paper]{ctexrep}
+
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{tikz}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\title{日地系统的理论分析与数值模拟}
+\author{}
+\date{}
+
+\newtheorem*{remark}{说明}
+\newtheorem*{example}{例}
+\newtheorem*{algorithmidea}{算法思想}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+本文日地系统的轨道方程和数值模拟。从完整牛顿方程出发，导出相对运动方程与质心表示，讨论圆轨道解及固定太阳近似。
+在此基础上，继续讨论日地系统的数值模拟。包括从相对运动系出发建立二维与三维数值模型，
+ Euler 方法与 Velocity-Verlet 方法的原理、实现和适用性，以及二者在圆轨道上的数值对比实验。
+ 最后，讨论如何以太阳--地月系质心（Sun--EM Bary）为对象，用 JPL Horizons 数据作为参考y，对数值模拟结果作定量验证。
+\end{abstract}
+
+\tableofcontents
+
+\include{chap01}
+\include{chap02}
+\include{appendix}
+
+
+\bibliographystyle{plain}
+\bibliography{qian}
+\end{document}

@@ -1,0 +1,751 @@
+\documentclass[12pt,a4paper]{ctexrep}
+
+\usepackage[a4paper,margin=2.6cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{physics}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{float}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+  citecolor=blue
+}
+
+\title{日地系统的理论分析与数值模拟}
+\author{}
+\date{}
+
+\newtheorem*{remark}{说明}
+\newtheorem*{example}{例}
+\newtheorem*{algorithmidea}{算法思想}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+本文将日地系统整理成一篇完整报告。第一章给出日地系统的理论分析：从完整牛顿方程出发，导出相对运动方程与质心表示，讨论圆轨道解及固定太阳近似。第二章讨论数值模拟：从相对运动系出发建立二维与三维数值模型，分别介绍 Euler 方法与 Velocity-Verlet 方法的原理、实现和适用性，并给出二者在圆轨道上的数值对比实验。最后，考虑与真实天体数据的对接，讨论如何以太阳--地月系质心（Sun--EM Bary）为对象，用 JPL Horizons 数据作为参考，对数值模拟结果作定量比较。
+\end{abstract}
+
+\tableofcontents
+
+\chapter{日地系统的理论分析}
+
+\section{问题背景}
+
+为了研究火箭或探测器在日地系统中的运动，最自然的第一步并不是立刻把推力、变质量和摄动全部放入模型，而是先把日地系统本身的动力学结构写清楚。若能先把太阳和地球之间的相对运动还原为一个标准二体问题，那么后续的轨道设计与数值模拟都会更清晰。
+
+本章的目标是：
+\begin{enumerate}[label=\arabic*.]
+  \item 写出太阳和地球在万有引力作用下的完整运动方程；
+  \item 将该系统化为一个关于相对位置的中心力二体问题；
+  \item 说明质心坐标下太阳与地球的位置表达；
+  \item 给出圆轨道的特解及其周期公式；
+  \item 说明固定太阳近似的依据。
+\end{enumerate}
+
+\section{日地系统的完整牛顿方程}
+
+设
+\[
+M_S>0,\qquad M_E>0
+\]
+分别表示太阳和地球的质量，
+\[
+\bm r_S(t),\qquad \bm r_E(t)\in \mathbb R^3
+\]
+分别表示时刻 \(t\) 太阳和地球在某惯性参考系中的位置向量。
+
+记万有引力常数为 \(G\)。根据牛顿万有引力定律，太阳受到地球的引力为
+\[
+\bm F_{S\leftarrow E}
+=
+G M_S M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\]
+地球受到太阳的引力为
+\[
+\bm F_{E\leftarrow S}
+=
+G M_S M_E
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\]
+由牛顿第二定律得
+\begin{equation}\label{eq:sun-motion}
+M_S \ddot{\bm r}_S
+=
+G M_S M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\end{equation}
+\begin{equation}\label{eq:earth-motion}
+M_E \ddot{\bm r}_E
+=
+G M_S M_E
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\end{equation}
+
+将质量约去，可写为
+\begin{equation}\label{eq:sun-motion-2}
+\ddot{\bm r}_S
+=
+G M_E
+\frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3},
+\end{equation}
+\begin{equation}\label{eq:earth-motion-2}
+\ddot{\bm r}_E
+=
+G M_S
+\frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}.
+\end{equation}
+
+这是一个耦合的二阶非线性常微分方程组，描述太阳和地球在相互引力作用下的运动。
+
+\section{相对运动方程的导出}
+
+由于在双体系统中真正重要的是两个天体之间的相对位置，因此引入
+\[
+\bm r(t)=\bm r_E(t)-\bm r_S(t).
+\]
+于是
+\[
+\ddot{\bm r}(t)=\ddot{\bm r}_E(t)-\ddot{\bm r}_S(t).
+\]
+将 \eqref{eq:sun-motion-2} 和 \eqref{eq:earth-motion-2} 代入，得到
+\begin{align*}
+\ddot{\bm r}
+&=
+G M_S \frac{\bm r_S-\bm r_E}{\|\bm r_E-\bm r_S\|^3}
+-
+G M_E \frac{\bm r_E-\bm r_S}{\|\bm r_E-\bm r_S\|^3}.
+\end{align*}
+注意到
+\[
+\bm r_S-\bm r_E=-(\bm r_E-\bm r_S)=-\bm r,
+\qquad
+\bm r_E-\bm r_S=\bm r,
+\]
+故
+\begin{align*}
+\ddot{\bm r}
+&=
+- G M_S \frac{\bm r}{\|\bm r\|^3}
+- G M_E \frac{\bm r}{\|\bm r\|^3} \\
+&=
+- G(M_S+M_E)\frac{\bm r}{\|\bm r\|^3}.
+\end{align*}
+因此相对运动满足
+\begin{equation}\label{eq:relative-motion}
+\ddot{\bm r}
+=
+- G(M_S+M_E)\frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+若记
+\[
+\mu:=G(M_S+M_E),
+\]
+则可简写为
+\begin{equation}\label{eq:relative-motion-mu}
+\ddot{\bm r}=-\mu \frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+
+这一步把原来的耦合双体系统化为了一个标准的中心力二体问题。以后无论是理论分析还是数值模拟，都可以直接围绕 \eqref{eq:relative-motion-mu} 展开。
+
+\section{质心运动与质心坐标表达}
+
+定义日地系统的质心为
+\[
+\bm R_c(t)=\frac{M_S\bm r_S(t)+M_E\bm r_E(t)}{M_S+M_E}.
+\]
+对其求二阶导数，得
+\[
+(M_S+M_E)\ddot{\bm R}_c=M_S\ddot{\bm r}_S+M_E\ddot{\bm r}_E.
+\]
+由 \eqref{eq:sun-motion} 和 \eqref{eq:earth-motion} 可知右边恰好为零，因此
+\[
+\ddot{\bm R}_c=0.
+\]
+所以质心作匀速直线运动；特别地，若选取质心静止系，则可取
+\[
+\bm R_c=0.
+\]
+
+在质心系中，由
+\[
+M_S \bm r_S + M_E \bm r_E = 0,
+\qquad
+\bm r = \bm r_E-\bm r_S
+\]
+可解得
+\begin{equation}\label{eq:rs-bary}
+\bm r_S=-\frac{M_E}{M_S+M_E}\bm r,
+\end{equation}
+\begin{equation}\label{eq:re-bary}
+\bm r_E=\frac{M_S}{M_S+M_E}\bm r.
+\end{equation}
+
+取模可得
+\[
+r_S=\frac{M_E}{M_S+M_E}\,r,
+\qquad
+r_E=\frac{M_S}{M_S+M_E}\,r,
+\]
+其中 \(r=\|\bm r\|\) 表示日地之间的相对距离。因此
+\[
+\frac{r_S}{r_E}=\frac{M_E}{M_S}.
+\]
+
+在实际天体力学计算中，往往直接使用标准引力参数 \(GM\) 而不是单独使用质量 \(M\)，因为运动方程本身直接依赖于 \(GM\)，而且观测上 \(GM\) 的精度通常更高。于是
+\[
+\frac{M_E}{M_S}=\frac{GM_E}{GM_S}.
+\]
+若取太阳和地球的标准引力参数，便可估计质心离太阳中心极近，太阳只作极小幅度摆动，而地球几乎绕着该质心作完整的天文单位尺度运动。
+
+\section{圆轨道作为特殊解}
+
+下面考虑 \eqref{eq:relative-motion-mu} 的一个特殊解：圆轨道。
+
+设日地相对距离恒为常数 \(a>0\)，且轨道位于某一固定平面内。取该平面为 \(xy\)-平面，设
+\begin{equation}\label{eq:circular-ansatz}
+\bm r(t)
+=
+a
+\begin{pmatrix}
+\cos nt\\
+\sin nt\\
+0
+\end{pmatrix},
+\end{equation}
+其中 \(n>0\) 为常数角速度。则
+\[
+\ddot{\bm r}(t)=-n^2\bm r(t).
+\]
+另一方面，由于 \(\|\bm r(t)\|=a\)，方程 \eqref{eq:relative-motion-mu} 右端为
+\[
+-\mu \frac{\bm r(t)}{\|\bm r(t)\|^3}=-\mu \frac{\bm r(t)}{a^3}.
+\]
+因此必须有
+\[
+-n^2\bm r(t)=-\mu \frac{\bm r(t)}{a^3},
+\]
+从而得到
+\begin{equation}\label{eq:n2}
+n^2=\frac{\mu}{a^3}=\frac{G(M_S+M_E)}{a^3}.
+\end{equation}
+于是圆轨道周期为
+\begin{equation}\label{eq:period}
+T=\frac{2\pi}{n}=2\pi \sqrt{\frac{a^3}{G(M_S+M_E)}}.
+\end{equation}
+这正是二体问题中的 Kepler 第三定律形式。
+
+\section{固定太阳近似的来源}
+
+在日地系统中，太阳质量远大于地球质量，因此
+\[
+M_S\gg M_E,
+\qquad
+M_S+M_E\approx M_S.
+\]
+于是相对运动方程 \eqref{eq:relative-motion-mu} 近似为
+\begin{equation}\label{eq:approx-relative}
+\ddot{\bm r}\approx -GM_S\frac{\bm r}{\|\bm r\|^3}.
+\end{equation}
+如果再进一步把太阳近似固定在原点，即令
+\[
+\bm r_S(t)\approx 0,
+\qquad
+\bm r_E(t)\approx \bm r(t),
+\]
+则地球运动可近似写成
+\begin{equation}\label{eq:earth-around-fixed-sun}
+\ddot{\bm r}_E=-GM_S\frac{\bm r_E}{\|\bm r_E\|^3}.
+\end{equation}
+
+\begin{remark}
+这就是通常所谓的“地球绕固定太阳运动”模型。它不是最原始的精确模型，而是从完整日地二体系统经过 \(M_S\gg M_E\) 这一物理近似后得到的。
+\end{remark}
+
+\section{本章小结}
+
+综上，日地系统的理论结构可以概括为：
+\begin{enumerate}[label=\arabic*.]
+  \item 在惯性系中，太阳和地球满足耦合的牛顿方程；
+  \item 引入相对位置 \(\bm r=\bm r_E-\bm r_S\) 后，系统化为中心力二体方程 \eqref{eq:relative-motion-mu}；
+  \item 在质心系中，太阳和地球的位置由 \eqref{eq:rs-bary}--\eqref{eq:re-bary} 给出；
+  \item 圆轨道是该系统的显式特解，其角速度和周期满足 \eqref{eq:n2}--\eqref{eq:period}；
+  \item 固定太阳模型是 \(M_S\gg M_E\) 下的近似模型。
+\end{enumerate}
+
+因此，第二章的数值模拟将以相对运动方程为基础展开。
+
+\chapter{日地系统的数值模拟}
+
+\section{从相对运动系开始的数值模拟框架}
+
+由第一章可知，日地系统在质心系中的内部动力学由
+\[
+\ddot{\bm r}=-\mu \frac{\bm r}{\|\bm r\|^3},
+\qquad
+\mu=G(M_S+M_E)
+\]
+决定，其中 \(\bm r=\bm r_E-\bm r_S\) 表示地球相对太阳的位置向量。数值模拟时，不必直接积分 \(\bm r_S,\bm r_E\) 两组耦合方程，而是先积分 \(\bm r\)，再由
+\[
+\bm r_S=-\frac{M_E}{M_S+M_E}\bm r,
+\qquad
+\bm r_E=\frac{M_S}{M_S+M_E}\bm r
+\]
+恢复太阳和地球在质心系中的位置。
+
+这种做法的优点是：
+\begin{enumerate}[label=\arabic*.]
+  \item 消除了不必要的整体平移自由度；
+  \item 直接抓住了引力作用依赖的相对位置；
+  \item 更便于讨论能量、角动量与轨道几何；
+  \item 便于将二维模型推广到三维模型。
+\end{enumerate}
+
+\section{二维模型与无量纲化}
+
+若先在固定平面内模拟，例如取 \(xy\)-平面，则令
+\[
+\bm r(t)=(x(t),y(t)).
+\]
+方程化为
+\begin{equation}\label{eq:2d-second}
+\ddot x=-\mu \frac{x}{(x^2+y^2)^{3/2}},
+\qquad
+\ddot y=-\mu \frac{y}{(x^2+y^2)^{3/2}}.
+\end{equation}
+
+令
+\[
+v_x=\dot x,\qquad v_y=\dot y,
+\]
+则可写成一阶系统
+\begin{equation}\label{eq:2d-first}
+\dot x=v_x,\qquad \dot y=v_y,
+\end{equation}
+\begin{equation}\label{eq:2d-first-2}
+\dot v_x=-\mu \frac{x}{(x^2+y^2)^{3/2}},
+\qquad
+\dot v_y=-\mu \frac{y}{(x^2+y^2)^{3/2}}.
+\end{equation}
+
+为简化数值实验，下面先使用无量纲单位：
+\begin{itemize}
+  \item 长度单位取 \(1\,\mathrm{AU}\)；
+  \item 时间单位取 \(1\,\mathrm{year}\)；
+  \item 令地球平均轨道半径近似为 \(1\)；
+  \item 令地球绕太阳一周的周期近似为 \(1\)。
+\end{itemize}
+在此单位制下，圆轨道条件给出
+\[
+\mu=4\pi^2.
+\]
+这时圆轨道的一个标准初值为
+\begin{equation}\label{eq:circular-ic}
+x(0)=1,\qquad y(0)=0,\qquad v_x(0)=0,\qquad v_y(0)=2\pi.
+\end{equation}
+理论解为
+\[
+x(t)=\cos(2\pi t),\qquad y(t)=\sin(2\pi t).
+\]
+
+\section{Euler 方法的原理与应用}
+
+\subsection{Euler 方法的基本思想}
+
+Euler 方法来源于最简单的一阶 Taylor 截断。对一阶系统
+\[
+\dot Y=f(Y)
+\]
+在时刻 \(t_n\) 处作展开，得到
+\[
+Y(t_{n+1})=Y(t_n)+h f(Y(t_n))+O(h^2),
+\]
+其中 \(h=t_{n+1}-t_n\) 为时间步长。因此，舍去高阶项后得到显式 Euler 格式
+\begin{equation}\label{eq:euler-general}
+Y_{n+1}=Y_n+h f(Y_n).
+\end{equation}
+
+将 \eqref{eq:2d-first}--\eqref{eq:2d-first-2} 视为一阶系统，状态向量取为
+\[
+Y=(x,y,v_x,v_y)^\top,
+\]
+则 Euler 方法的迭代公式为
+\begin{align}
+ x_{n+1} &= x_n+h v_{x,n},\label{eq:euler-x}\\
+ y_{n+1} &= y_n+h v_{y,n},\label{eq:euler-y}\\
+ v_{x,n+1} &= v_{x,n}-h\mu \frac{x_n}{(x_n^2+y_n^2)^{3/2}},\label{eq:euler-vx}\\
+ v_{y,n+1} &= v_{y,n}-h\mu \frac{y_n}{(x_n^2+y_n^2)^{3/2}}.\label{eq:euler-vy}
+\end{align}
+
+\subsection{Euler 方法在轨道问题中的特点}
+
+Euler 方法的优点是公式极其简单，适合入门、调试和作为对照实验；但在轨道问题中，它有明显缺点：
+\begin{enumerate}[label=\arabic*.]
+  \item 它只有一阶精度，步长稍大时误差积累很快；
+  \item 它不保持哈密顿系统的几何结构；
+  \item 在长期传播中，能量往往出现明显漂移；
+  \item 对周期轨道，常见现象是轨道逐渐向外发散或向内坍缩。
+\end{enumerate}
+因此，Euler 方法更适合用来说明“一个不适合轨道长期传播的方法会出现什么问题”，而不适合作为正式的轨道长期模拟方法。
+
+\section{Velocity-Verlet 方法的原理与应用}
+
+\subsection{从二阶系统出发}
+
+对于形如
+\[
+\ddot{\bm r}=\bm a(\bm r)
+\]
+的二阶系统，其中加速度仅依赖于位置，Velocity-Verlet 是最自然的时间离散格式之一。对于日地相对运动，有
+\[
+\bm a(\bm r)=-\mu \frac{\bm r}{\|\bm r\|^3}.
+\]
+
+\subsection{从 Taylor 展开导出位置更新}
+
+对位置作 Taylor 展开：
+\[
+\bm r(t+h)=\bm r(t)+h\bm v(t)+\frac{h^2}{2}\bm a(t)+O(h^3).
+\]
+因此可用
+\begin{equation}\label{eq:vv-r}
+\bm r_{n+1}=\bm r_n+h\bm v_n+\frac{h^2}{2}\bm a_n
+\end{equation}
+更新位置，其中 \(\bm a_n=\bm a(\bm r_n)\)。
+
+在得到 \(\bm r_{n+1}\) 后，计算新位置对应的加速度
+\[
+\bm a_{n+1}=\bm a(\bm r_{n+1}).
+\]
+然后利用当前与下一步加速度的平均值更新速度：
+\begin{equation}\label{eq:vv-v}
+\bm v_{n+1}=\bm v_n+\frac{h}{2}(\bm a_n+\bm a_{n+1}).
+\end{equation}
+这就是 Velocity-Verlet 的基本格式。
+
+\subsection{哈密顿观点下的解释}
+
+对于可分离哈密顿系统
+\[
+H(q,p)=T(p)+V(q),
+\]
+Velocity-Verlet 也可视为一种 ``kick--drift--kick'' 的对称分裂：
+\[
+p^{n+\frac12}=p^n-\frac{h}{2}\nabla V(q^n),
+\]
+\[
+q^{n+1}=q^n+h\,p^{n+\frac12},
+\]
+\[
+p^{n+1}=p^{n+\frac12}-\frac{h}{2}\nabla V(q^{n+1}).
+\]
+因此，对固定步长的可分离保守系统，Velocity-Verlet 是一个二阶、时间可逆、保辛的积分格式。它一般并不在每一步严格守恒原始能量，但常见现象是：长期积分中能量误差呈有界振荡，而不是像 Euler 方法那样持续漂移。
+
+\subsection{二维情形下的具体实现}
+
+对二维状态 \(\bm r_n=(x_n,y_n)\)、\(\bm v_n=(v_{x,n},v_{y,n})\)，加速度函数为
+\[
+\bm a(\bm r)=
+-\mu \frac{\bm r}{\|\bm r\|^3}
+=
+\left(
+-\mu \frac{x}{(x^2+y^2)^{3/2}},
+-\mu \frac{y}{(x^2+y^2)^{3/2}}
+\right).
+\]
+因此每一步迭代为
+\[
+\bm a_n=\bm a(\bm r_n),
+\]
+\[
+\bm r_{n+1}=\bm r_n+h\bm v_n+\frac{h^2}{2}\bm a_n,
+\]
+\[
+\bm a_{n+1}=\bm a(\bm r_{n+1}),
+\]
+\[
+\bm v_{n+1}=\bm v_n+\frac{h}{2}(\bm a_n+\bm a_{n+1}).
+\]
+
+\section{圆轨道上 Euler 与 Velocity-Verlet 的对比实验}
+
+\subsection{实验设置}
+
+为了直接比较两种方法，考虑圆轨道初值 \eqref{eq:circular-ic}，模拟一整年（即一个完整周期），比较：
+\begin{enumerate}[label=\arabic*.]
+  \item 一周后终点与理论点 \((1,0)\) 的位置误差；
+  \item 相对能量误差 \( |E_N-E_0|/|E_0| \)；
+  \item 相对角动量误差 \( |L_N-L_0|/|L_0| \)。
+\end{enumerate}
+其中
+\[
+E=\frac12(v_x^2+v_y^2)-\frac{\mu}{\sqrt{x^2+y^2}},
+\qquad
+L=xv_y-yv_x.
+\]
+
+\subsection{一个具体数值例子}
+
+取两组典型步长 \(h=10^{-2}\) 与 \(h=10^{-3}\)，数值实验结果可整理为表 \ref{tab:euler-vv-circle}。
+
+\begin{table}[H]
+\centering
+\caption{圆轨道上一周期后 Euler 与 Velocity-Verlet 的对比}
+\label{tab:euler-vv-circle}
+\begin{tabular}{cccccc}
+\toprule
+方法 & 步长 \(h\) & 位置误差 & 相对能量误差 & 相对角动量误差 & 现象 \\
+\midrule
+Euler & $10^{-2}$ & $2.2556$ & $3.4845\times 10^{-1}$ & $2.2650\times 10^{-1}$ & 轨道明显发散 \\
+Velocity-Verlet & $10^{-2}$ & $8.2560\times 10^{-3}$ & $4.22\times 10^{-12}$ & $1.41\times 10^{-16}$ & 仍接近圆轨道 \\
+Euler & $10^{-3}$ & $3.5853\times 10^{-1}$ & $6.8360\times 10^{-2}$ & $3.6033\times 10^{-2}$ & 漂移仍明显 \\
+Velocity-Verlet & $10^{-3}$ & $8.2682\times 10^{-5}$ & $5.40\times 10^{-15}$ & $2.69\times 10^{-15}$ & 结果极稳定 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+从这个例子可以清楚看出：对于简单的圆轨道传播，Euler 方法即使在较小步长下也会产生明显的轨道漂移；而 Velocity-Verlet 对圆轨道的几何结构保持得很好，能量和角动量误差也小得多。这个实验非常适合作为第二章中的方法比较示例。
+
+\section{二维模拟方案总结}
+
+基于上面的讨论，一个完整的二维模拟流程如下：
+\begin{enumerate}[label=\arabic*.]
+  \item 采用无量纲单位，取 \(\mu=4\pi^2\)；
+  \item 选择总模拟时间 \(T\) 与步长 \(h\)；
+  \item 指定初值，例如圆轨道初值 \eqref{eq:circular-ic} 或某个椭圆轨道初值；
+  \item 分别用 Euler 与 Velocity-Verlet 做积分；
+  \item 记录轨道、机械能和角动量；
+  \item 由质心公式恢复太阳和地球的轨道；
+  \item 对比两种算法在轨道形状与守恒量上的表现。
+\end{enumerate}
+
+\section{三维模型的推广}
+
+\subsection{三维相对运动方程}
+
+在三维情形下，取
+\[
+\bm r(t)=(x(t),y(t),z(t)),
+\qquad
+\bm v(t)=(v_x(t),v_y(t),v_z(t)).
+\]
+则相对运动方程为
+\[
+\ddot{\bm r}=-\mu \frac{\bm r}{\|\bm r\|^3},
+\qquad
+\|\bm r\|=\sqrt{x^2+y^2+z^2}.
+\]
+对应的一阶系统为
+\[
+\dot x=v_x,\quad \dot y=v_y,\quad \dot z=v_z,
+\]
+\[
+\dot v_x=-\mu \frac{x}{(x^2+y^2+z^2)^{3/2}},\qquad
+\dot v_y=-\mu \frac{y}{(x^2+y^2+z^2)^{3/2}},\qquad
+\dot v_z=-\mu \frac{z}{(x^2+y^2+z^2)^{3/2}}.
+\]
+
+\subsection{三维模拟的意义}
+
+从理论上说，二体问题总是限制在某个平面内，因此三维模型并不比二维更“本质复杂”；但三维模拟仍然很有意义，因为它能够：
+\begin{enumerate}[label=\arabic*.]
+  \item 显式处理轨道倾角；
+  \item 便于与 JPL 提供的三维状态向量直接对接；
+  \item 为以后加入摄动、多体效应和坐标变换做准备。
+\end{enumerate}
+
+例如，可取
+\[
+\bm r(0)=(1,0,0),
+\qquad
+\bm v(0)=\left(0,2\pi\cos i,2\pi\sin i\right),
+\]
+其中 \(i\) 为给定倾角。这样得到的轨道不再落在 \(xy\)-平面中，而是位于一个倾斜的轨道平面内。
+
+\subsection{三维下的守恒量}
+
+三维情形下的机械能仍为
+\[
+E=\frac12\|\bm v\|^2-\frac{\mu}{\|\bm r\|},
+\]
+角动量变为向量
+\[
+\bm L=\bm r\times \bm v.
+\]
+因此数值模拟时，除观察 \(E\) 是否近似守恒外，还应检查 \(\bm L\) 的模长及其方向是否近似不变。
+
+\subsection{三维下的 Velocity-Verlet}
+
+Velocity-Verlet 在三维中的形式与二维完全平行：
+\[
+\bm a(\bm r)=-\mu \frac{\bm r}{\|\bm r\|^3},
+\]
+\[
+\bm a_n=\bm a(\bm r_n),
+\]
+\[
+\bm r_{n+1}=\bm r_n+h\bm v_n+\frac{h^2}{2}\bm a_n,
+\]
+\[
+\bm a_{n+1}=\bm a(\bm r_{n+1}),
+\]
+\[
+\bm v_{n+1}=\bm v_n+\frac{h}{2}(\bm a_n+\bm a_{n+1}).
+\]
+因此程序结构几乎无需改变，只需把二维向量升级为三维向量即可。
+
+\section{实际太阳--地月系质心系统的模拟与 JPL 数据对比}
+
+\subsection{为何选择 Sun--EM Bary 作为比较对象}
+
+为了把简单的二体模型和真实天体数据联系起来，最自然的比较对象不是“太阳--地球中心”，而是“太阳--地月系质心（Sun--EM Bary）”。原因是：真实的地球会受到月球影响而围绕地月系质心摆动，而 JPL 在行星近似位置表和 Horizons 系统中都把 Earth--Moon Barycenter 作为标准对象之一。这样做既更接近真实太阳系动力学，也更便于调用官方星历数据。
+
+为避免记号混淆，本节将“实际系统”理解为太阳与地月系质心之间的相对运动。其引力参数取为
+\[
+\mu_{\mathrm{SEMB}}=GM_{\odot}+GM_{\oplus}+GM_{\mathrm{Moon}}.
+\]
+
+\subsection{实际参数的选取}
+
+若采用 JPL 给出的标准引力参数，可取
+\[
+GM_{\odot}=1.32712440041279419\times 10^{11}\ \mathrm{km^3\,s^{-2}},
+\]
+\[
+GM_{\oplus}=398600.435507\ \mathrm{km^3\,s^{-2}},
+\qquad
+GM_{\mathrm{Moon}}=4902.800118\ \mathrm{km^3\,s^{-2}}.
+\]
+因此
+\[
+GM_{\mathrm{EMB}}=GM_{\oplus}+GM_{\mathrm{Moon}}=403503.235625\ \mathrm{km^3\,s^{-2}},
+\]
+\[
+\mu_{\mathrm{SEMB}}=GM_{\odot}+GM_{\mathrm{EMB}}.
+\]
+
+数值模拟时可以选择两种方式：
+\begin{enumerate}[label=\arabic*.]
+  \item 继续用无量纲单位做教学实验；
+  \item 改用真实单位（km, s 或 AU, day），直接与 JPL 数据比对。
+\end{enumerate}
+若要和 JPL 数据逐项比较，推荐使用真实单位。
+
+\subsection{与 JPL Horizons 对接的基本思路}
+
+JPL Horizons 可以输出某一天体相对于另一参考中心的笛卡尔状态向量或振荡轨道要素。对于 Sun--EM Bary 系统，可令目标体为 Earth--Moon Barycenter，参考中心为 Sun，然后获取某个历元的状态向量
+\[
+\bm r_0=(x_0,y_0,z_0),
+\qquad
+\bm v_0=(v_{x,0},v_{y,0},v_{z,0}).
+\]
+然后：
+\begin{enumerate}[label=\arabic*.]
+  \item 在三维二体模型中，以 \((\bm r_0,\bm v_0)\) 作为初值进行积分；
+  \item 若要得到二维模型，则把该状态向量投影到选定参考平面（通常取黄道平面）；
+  \item 在后续时刻 \(t_n\) 上，把数值解 \((\bm r_n,\bm v_n)\) 与 Horizons 给出的参考状态作比较。
+\end{enumerate}
+
+\subsection{对比指标的设计}
+
+建议至少比较以下几个量：
+\begin{enumerate}[label=\arabic*.]
+  \item 位置误差
+  \[
+  \varepsilon_r(t_n)=\|\bm r_{\mathrm{num}}(t_n)-\bm r_{\mathrm{JPL}}(t_n)\|;
+  \]
+  \item 速度误差
+  \[
+  \varepsilon_v(t_n)=\|\bm v_{\mathrm{num}}(t_n)-\bm v_{\mathrm{JPL}}(t_n)\|;
+  \]
+  \item 若只比较二维投影，还可比较平面角位置误差
+  \[
+  \varepsilon_\lambda(t_n)=|\lambda_{\mathrm{num}}(t_n)-\lambda_{\mathrm{JPL}}(t_n)|;
+  \]
+  \item 对于径向变化明显的情形，还可比较日距误差
+  \[
+  \varepsilon_\rho(t_n)=\left|\,\|\bm r_{\mathrm{num}}(t_n)\|-\|\bm r_{\mathrm{JPL}}(t_n)\|\right|.
+  \]
+\end{enumerate}
+
+\subsection{二维模型和 JPL 数据的预期差异}
+
+需要指出的是：二维相对运动模型本质上是一个固定平面内的二体模型，而 JPL Horizons 背后使用的是高精度太阳系星历。因此，两者即使在同一历元有相同初值，后续传播也不会严格重合。差异主要来自：
+\begin{enumerate}[label=\arabic*.]
+  \item 真实太阳系是多体系统，而不是严格二体系统；
+  \item 真实轨道并不永远限制在一个固定平面内；
+  \item JPL 参考解中包含了更完整的动力学与星历拟合信息。
+\end{enumerate}
+
+因此，二维模型与 JPL 的比较，更适合被理解为：
+\begin{center}
+一个教学级二体模型，对真实 Sun--EM Bary 运动的主轨道形状、主频率和短期相位的近似能力检验。
+\end{center}
+
+\subsection{一个可执行的对比实验}
+
+下面给出一个可以直接写入程序的实验方案：
+\begin{enumerate}[label=\arabic*.]
+  \item 选定参考历元，例如某年 1 月 1 日的 TDB 时刻；
+  \item 从 Horizons 获取 EM Bary 相对 Sun 的状态向量；
+  \item 在三维模型中用该状态向量做初值，采用 Velocity-Verlet 积分一年；
+  \item 每隔一天或每隔一周输出一次数值状态；
+  \item 同时从 Horizons 获取对应时刻的参考状态；
+  \item 计算 \(\varepsilon_r(t_n)\)、\(\varepsilon_v(t_n)\) 和 \(\varepsilon_\lambda(t_n)\)；
+  \item 若只做二维模型，则先把初值与参考解都投影到黄道平面，再作同样的误差比较。
+\end{enumerate}
+
+\subsection{与 JPL 近似轨道要素的关系}
+
+若不直接使用 Horizons 的向量表，也可先用 JPL 给出的 EM Bary 近似 Kepler 轨道要素作初值近似，然后再与 Horizons 精细数据比较。这样做的逻辑是：
+\begin{enumerate}[label=\arabic*.]
+  \item 用 JPL 的近似要素给出一个合理的初始椭圆轨道；
+  \item 用二体模型数值传播得到轨道；
+  \item 用 Horizons 作为高精度参考，检验二体模型在短期和中期内的误差累积。
+\end{enumerate}
+这比“随意给一个单位圆初值”更接近真实太阳系数据。
+
+\section{本章小结}
+
+本章从相对运动系出发，建立了日地系统的数值模拟框架。其主要结论如下：
+\begin{enumerate}[label=\arabic*.]
+  \item 对于日地系统，先在质心系中积分相对运动方程，是最自然的建模方式；
+  \item Euler 方法实现简单，但长期轨道传播性能差，更适合作为对照方法；
+  \item Velocity-Verlet 方法适合位置决定加速度的保守系统，在轨道问题中具有更好的长期稳定性；
+  \item 在圆轨道实验中，Velocity-Verlet 相比 Euler 明显更能保持轨道形状、能量和角动量；
+  \item 若要与真实天体数据对接，则以 Sun--EM Bary 为对象，并以 JPL Horizons 作为参考，是最合适的实际比较路线。
+\end{enumerate}
+
+\appendix
+\chapter{JPL Horizons 数据获取示例}
+
+以下给出一个便于命令行使用的 Horizons API 示例。为了避免 URL 编码问题，建议使用 \texttt{curl --get} 与 \texttt{--data-urlencode}：
+
+\begin{verbatim}
+curl --get "https://ssd.jpl.nasa.gov/api/horizons.api" \
+  --data-urlencode "format=text" \
+  --data-urlencode "COMMAND='3'" \
+  --data-urlencode "CENTER='10'" \
+  --data-urlencode "MAKE_EPHEM='YES'" \
+  --data-urlencode "EPHEM_TYPE='VECTORS'" \
+  --data-urlencode "START_TIME='2026-01-01'" \
+  --data-urlencode "STOP_TIME='2026-01-10'" \
+  --data-urlencode "STEP_SIZE='1 d'" \
+  --data-urlencode "OUT_UNITS='AU-D'" \
+  --data-urlencode "REF_PLANE='ECLIPTIC'" \
+  --data-urlencode "REF_SYSTEM='J2000'" \
+  --data-urlencode "VEC_TABLE='2'" \
+  --data-urlencode "CSV_FORMAT='YES'"
+\end{verbatim}
+
+其中目标体 \texttt{COMMAND='3'} 表示 Earth--Moon Barycenter，参考中心 \texttt{CENTER='10'} 表示 Sun。若只想获取某个单独历元的状态，可改用 \texttt{TLIST} 参数并只请求一个时刻。若希望获取轨道要素而不是状态向量，只需把 \texttt{EPHEM\_TYPE='VECTORS'} 改为 \texttt{EPHEM\_TYPE='ELEMENTS'}。
+
+\end{document}
