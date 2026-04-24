@@ -1,0 +1,14 @@
+{
+  "max_err_r_abs_km": 5829.178164547824,
+  "max_err_r_rel": 3.850618421871977e-05,
+  "max_err_v_abs_kms": 0.0016939802788834156,
+  "max_err_v_rel": 5.5933779981161935e-05,
+  "max_err_rho_abs_km": 2873.5369787216187,
+  "max_err_rho_rel": 1.9533930850765643e-05,
+  "final_err_r_abs_km": 4768.927702891731,
+  "final_err_r_rel": 3.241855061215568e-05,
+  "final_err_v_abs_kms": 0.0016939802788834156,
+  "final_err_v_rel": 5.5933779981161935e-05,
+  "final_err_rho_abs_km": 2873.5369787216187,
+  "final_err_rho_rel": 1.9533930850765643e-05
+}
