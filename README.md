@@ -1,2 +1,3 @@
-# MathSoft
-Examples for Math Soft course of ZJU-Math.
+# 人工智能和数学软件
+
+ZJU 数学院《人工智能和数学软件》课程项目。
